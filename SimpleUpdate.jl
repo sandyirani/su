@@ -154,16 +154,16 @@ function merge(row, col, dir, inv)
         SVrc = SV[row-1,col]
         if inv SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
-            temp[a,b,newC,d,s] := Arc[a,b,c,d,s] * SVrc[newC,c]
+            temp[newA,b,c,d,s] := Arc[a,b,c,d,s] * SVrc[newA,a]
         end
-        A[row,col] = Arc
+        A[row,col] = temp
     elseif dir == DOWN && row < N
         SVrc = SV[row,col]
         if inv SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
             temp[a,b,newC,d,s] := Arc[a,b,c,d,s] * SVrc[c,newC]
         end
-        A[row,col] = Arc
+        A[row,col] = temp
     elseif dir == RIGHT && col < N
         SHrc = SH[row,col]
         if inv SHrc = diagm(inv.(diag(SHrc))) end
@@ -175,7 +175,7 @@ function merge(row, col, dir, inv)
         SHrc = SH[row,col-1]
         if inv SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
-            temp[a,b,n,newD,s] := Arc[a,b,c,d,s] * SHrc[newD,d]
+            temp[a,b,c,newD,s] := Arc[a,b,c,d,s] * SHrc[newD,d]
         end
         A[row,col] = temp
     end
