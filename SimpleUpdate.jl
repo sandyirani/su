@@ -46,8 +46,8 @@ function mainLoop()
         println("\n iteration = $iter")
         for j = 1:N
             for k = 1:N-1
-                applyGateAndUpdate(taugate, true, j, k)
-                applyGateAndUpdate(taugate, false, k, j)
+                applyGateAndUpdate(taugate, true, j, k) #true = horiz
+                applyGateAndUpdate(taugate, false, k, j) #false = vert
             end
         end
     end
@@ -145,14 +145,7 @@ function applyGateAndTrim(Aleft,Aright)
         return(A2p, B2p, newSH)
 end
 
-function applyGateAndUpdateRight(g, row, col)
-        merge(row,col,UP)
-        merge(row,col,RIGHT)
-        merge(row,col,LEFT)
-        merge(row+1,col,LEFT)
-        merge(row+1,col,RIGHT)
-        merge(row+1,col,DOWN)
-end
+
 
 function merge(row, col, dir, inv)
     a = size(A[row,col])
