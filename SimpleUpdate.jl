@@ -46,8 +46,8 @@ function mainLoop()
         println("\n iteration = $iter")
         for j = 1:N
             for k = 1:N-1
-                applyGateAndUpdate(taugate, true, j, k) #true = horiz
-                applyGateAndUpdate(taugate, false, k, j) #false = vert
+                applyGateAndUpdateRight(taugate, true, j, k) #true = horiz
+                applyGateAndUpdateDown(taugate, false, k, j) #false = vert
             end
         end
     end
@@ -68,7 +68,7 @@ function applyGateAndUpdateRight(g, row, col)
         A[row,col] = Aleft
         A[row,col+1] = Aright
         SH[row,col] = SH
-        merge(row,col,UP,false)
+        merge(row,col,UP,true)
         merge(row,col,DOWN,true)
         merge(row,col,LEFT,true)
         merge(row,col+1,UP,true)
@@ -77,7 +77,7 @@ function applyGateAndUpdateRight(g, row, col)
 
 end
 
-function applyGateAndUpdateRight(g, row, col)
+function applyGateAndUpdateDown(g, row, col)
 
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
@@ -88,16 +88,18 @@ function applyGateAndUpdateRight(g, row, col)
         merge(row+1,col,DOWN,false)
         Aleft = A[row,col]
         Aright = A[row+1,col]
+        (Aleft,Aright) = rotateTensors(Aleft,Aright)
         (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright)
+        (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
         A[row,col] = Aleft
         A[row+1,col] = Aright
         SH[row,col] = SH
         merge(row,col,UP,false)
         merge(row,col,DOWN,true)
         merge(row,col,LEFT,true)
-        merge(row,col+1,UP,true)
-        merge(row,col+1,RIGHT,true)
-        merge(row,col+1,DOWN,true)
+        merge(row+1,col,LEFT,true)
+        merge(row+1,col,RIGHT,true)
+        merge(row+1,col,DOWN,true)
 
 end
 
@@ -179,22 +181,4 @@ function merge(row, col, dir, inv)
         end
         A[row,col] = temp
     end
-end
-
-function applyGateAndUpdate(g, horiz, row, col))
-  @tensor begin
-    ABg[a,e,f,s1p,b,c,d,s2p] := A2[a,x,e,f,s1]*B2[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
-  end
-  a = size(ABg)
-  ABg = reshape(ABg,a[1]*a[2]*a[3]*pd,a[5]*a[6]*a[7]*pd)
-  (U,d,V) = svd(ABg)
-  U = U * diagm(d)
-  newDim = min(D,length(d))
-  U = U[:,1:newDim]
-  V = V[:,1:newDim]
-  A2p = reshape(U,a[1],a[2],a[3],pd,newDim)
-  B2p = reshape(V',newDim,a[5],a[6],a[7],pd)
-  A2p = [A2p[i,j,k,s,l] for i=1:a[1], l=1:newDim, j=1:a[2], k=1:a[3], s=1:pd]
-  B2p = [B2p[i,j,k,l,s] for j=1:a[5], k=1:a[6], l=1:a[7], i=1:newDim, s=1:pd]
-  return(A2p, B2p)
 end
