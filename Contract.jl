@@ -5,7 +5,29 @@ function JK(a,b)	# Julia kron,  ordered for julia arrays; returns matrix
 end
 
 
+RowEnv = [ones(1,1,1) for i=1:N+2, for j=1:N]
 
+function updateRowEnv(row)
+
+  if (row < 1 || row > N) return;
+
+  newRow = [ones(1,1,1) for k = 1:N]
+  for k = 1:N
+    RE = RowEnv[row,k]
+    T = A[row,k]
+    @tensor begin
+      NewRE[a,f,e,c,d] := RE[a,b,c]*T[b,d,e,f]
+    end
+    nre = size(NewRE)
+    NewRE = reshape(NewRE,nre[1]*nre[2],nre[3],nre[4]*nre[5])
+  end
+  if k > 2
+    RE[row+1,k] = approx(NewRE,D)
+  else
+    RE[row+1,k] = NewRE  
+  end
+
+end
 
 
 function approxMPS(Big,D)
