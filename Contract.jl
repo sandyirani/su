@@ -5,38 +5,101 @@ function JK(a,b)	# Julia kron,  ordered for julia arrays; returns matrix
 end
 
 
-RowEnv = [ones(1,1,1) for i=1:N+2, for j=1:N]
+RowEnv = [ones(1,1,1) for j=1:N, for k=1:N]
+SideEnv = [ones(1,1,1,1) for k=1:N]
+endRow = [ones(1,1,1) for j=1:N]
+endSide = ones(1,1,1,1)
+Dp = D^2
 
-function updateRowEnv(row)
+function initRowEnv()
+  for j = 1:N-1
+    updateRowEnv(j,true)
+  end
+end
+
+function updateSideEnv(row, col, toRight)
+
+  if (row < 1 || row > N) return;
+
+  newSide = ones(1,1,1,1)
+  if (toRight)
+    lastSide = (col == 1? endSide: SideEnv[col-1,:])
+  else
+    lastSide = (col == N? endSide: SideEnv[col+1,:])
+  end
+  dimW = (col == 1? || col == N? 1:D)
+  dimN = (row == 1? 1:D)
+  dimS = (row == N? 1:D)
+  upEnv = (row == 1? endRow[col]: RowEnv[row-1,col])
+  downEnv = (row == N? endRow[col]: RowEnv[row+1,col])
+  ue = size(upEnv)
+  de = size(downEnv)
+  ls = size(lastSide)
+
+  temp = reshape(lastSide,ls[1]*ls[2]*ls[3],ls[4])*reshape(downEnv,de[1],de[2]*de[3])
+  temp = reshape(temp,ls[1],ls[2],ls[3],de[2],de[3])
+  temp = reshape(temp,ls[1],ls[2]*ls[3]*de[2]*de[3])
+  temp2 = transpose(temp)*reshape(upEnv,ue[1],ue[2]*ue[3])
+  temp2 = reshape(temp2,ls[2],ls[3],dimS,dimS,de[3],dimN,dimN,ue[3])
+
+  T = A[row,col]
+  conjT = conj.(T)
+
+  @tensor begin
+    temp3[x,bp,b,y] := temp2[dp,d,cp,c,y,ap,a,x]*T[a,b,c,d,s]*Tconj[ap,bp,cp,dp,s]
+  end
+  SideEnv[row,col] = temp3
+
+end
+
+function updateRowEnv(row, topDown)
 
   if (row < 1 || row > N) return;
 
   newRow = [ones(1,1,1) for k = 1:N]
+  if (topDown)
+    lastRow = (row == 1? endRow: RowEnv[row-1,:])
+  else
+    lastRow = (row == N? endRow: RowEnv[row+1,:])
+  end
+  dim = (row ==1 || row == N? 1:D)
+
   for k = 1:N
-    RE = RowEnv[row,k]
+    RE = lastRow[k]
+    re = size(RE)
+    RE = reshape(RE,re[1],dim,dim,re[3])
     T = A[row,k]
-    @tensor begin
-      NewRE[a,f,e,c,d] := RE[a,b,c]*T[b,d,e,f]
+    Tconj = conj.(A[row,k])
+    if (topDown)
+      @tensor begin
+        NewRE[a,fp,f,ep,e,c,dp,d] := RE[a,bp,b,c]*T[b,d,e,f,s]*T[bp,dp,ep,fp,s]
+      end
+    else
+      @tensor begin
+        NewRE[fp,f,a,dp,d,ep,e,c] := RE[a,bp,b,c]*T[d,e,b,f,s]*T[dp,ep,bp,fp,s]
+      end
     end
     nre = size(NewRE)
-    NewRE = reshape(NewRE,nre[1]*nre[2],nre[3],nre[4]*nre[5])
+    NewRE = reshape(NewRE,nre[1]*nre[2]*nre[3],nre[4]*nre[5],nre[6]*nre[7]*nre[8])
+    newRow[k] = newRE
   end
-  if k > 2
-    RE[row+1,k] = approx(NewRE,D)
+
+  if (row > 1 && row < N)
+    RowEnv[row,:] = approx(newRow,Dp)
   else
-    RE[row+1,k] = NewRE  
+    RowEnv[row,:] = newRow
   end
 
 end
 
 
-function approxMPS(Big,D)
+function approxMPS(Big,Dp)
 
   pd = [size(Big[j])[2] for j=1:N] #particle dimensions
 
-  New = [rand(D,pd[j],D) for j = 1:N]
-  New[1] = rand(1,pd[1],D)
-  New[N] = rand(D,pd[N],1)
+  New = [rand(Dp,pd[j],Dp) for j = 1:N]
+  New[1] = rand(1,pd[1],Dp)
+  New[N] = rand(Dp,pd[N],1)
 
   BN = [eye(1) for j = 1:N]
   NN = [eye(1) for j = 1:N]
