@@ -70,12 +70,16 @@ function applyGateAndUpdateRight(g, row, col)
         merge(row,col+1,DOWN,false)
         Aleft = A[row,col]
         Aright = A[row,col+1]
-        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright,g)
+        (Aleft,Aright,SHnew) = applyGateAndTrim(Aleft,Aright,g)
+        al = size(Aleft)
+        ar = size(Aright)
+        sh = size(SHnew)
+        if (al[2] != sh[1] || ar[4] != sh[2])
+          @show(al, ar, sh)
+        end
         A[row,col] = Aleft
         A[row,col+1] = Aright
-        @show(size(SH))
-        @show(size(SH[row,col]))
-        SH[row,col] = SH
+        SH[row,col] = SHnew
         merge(row,col,UP,true)
         merge(row,col,DOWN,true)
         merge(row,col,LEFT,true)
@@ -87,6 +91,7 @@ end
 
 function applyGateAndUpdateDown(g, row, col)
 
+
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
         merge(row,col,LEFT,false)
@@ -97,13 +102,19 @@ function applyGateAndUpdateDown(g, row, col)
         Aleft = A[row,col]
         Aright = A[row+1,col]
         (Aleft,Aright) = rotateTensors(Aleft,Aright)
-        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright,g)
+        (Aleft,Aright,SHnew) = applyGateAndTrim(Aleft,Aright,g)
         (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
+        al = size(Aleft)
+        ar = size(Aright)
+        sh = size(SHnew)
+        if (al[3] != sh[1] || ar[1] != sh[2])
+          @show(al, ar, sh)
+        end
         A[row,col] = Aleft
         A[row+1,col] = Aright
-        SH[row,col] = SH
-        merge(row,col,UP,false)
-        merge(row,col,DOWN,true)
+        SH[row,col] = SHnew
+        merge(row,col,UP,true)
+        merge(row,col,RIGHT,true)
         merge(row,col,LEFT,true)
         merge(row+1,col,LEFT,true)
         merge(row+1,col,RIGHT,true)
@@ -116,8 +127,8 @@ function rotateTensors(Ap,Bp)
     ap = size(Ap)
     bp = size(Bp)
 
-    A2 = [Ap[a,b,c,d,s] for b = 1:bp[2], c = 1:bp[3], d = 1:bp[4], a = 1:bp[1], s = 1:pd]
-    B2 = [Bp[a,b,c,d,s] for b = 1:ap[2], c = 1:ap[3], d = 1:ap[4], a = 1:ap[1], s = 1:pd]
+    A2 = [Ap[a,b,c,d,s] for b = 1:ap[2], c = 1:ap[3], d = 1:ap[4], a = 1:ap[1], s = 1:pd]
+    B2 = [Bp[a,b,c,d,s] for b = 1:bp[2], c = 1:bp[3], d = 1:bp[4], a = 1:bp[1], s = 1:pd]
 
     return(A2,B2)
 
@@ -128,8 +139,8 @@ function rotateTensorsBack(Ap,Bp)
     ap = size(Ap)
     bp = size(Bp)
 
-    A2 = [Ap[a,b,c,d,s] for d = 1:bp[4], a = 1:bp[1], b = 1:bp[2], c = 1:bp[3], s = 1:pd]
-    B2 = [Bp[a,b,c,d,s] for d = 1:ap[4], a = 1:ap[1], b = 1:ap[2], c = 1:ap[3], s = 1:pd]
+    A2 = [Ap[a,b,c,d,s] for d = 1:ap[4], a = 1:ap[1], b = 1:ap[2], c = 1:ap[3], s = 1:pd]
+    B2 = [Bp[a,b,c,d,s] for d = 1:bp[4], a = 1:bp[1], b = 1:bp[2], c = 1:bp[3], s = 1:pd]
 
     return(A2,B2)
 
@@ -157,34 +168,33 @@ end
 
 
 
-function merge(row, col, dir, inv)
-    @show(row,col)
+function merge(row, col, dir, doInv)
     a = size(A[row,col])
     Arc = A[row,col]
     if dir == UP && row > 1
         SVrc = SV[row-1,col]
-        if inv SVrc = diagm(inv.(diag(SVrc))) end
+        if (doInv) SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
             temp[newA,b,c,d,s] := Arc[a,b,c,d,s] * SVrc[newA,a]
         end
         A[row,col] = temp
     elseif dir == DOWN && row < N
         SVrc = SV[row,col]
-        if inv SVrc = diagm(inv.(diag(SVrc))) end
+        if (doInv) SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
             temp[a,b,newC,d,s] := Arc[a,b,c,d,s] * SVrc[c,newC]
         end
         A[row,col] = temp
     elseif dir == RIGHT && col < N
         SHrc = SH[row,col]
-        if inv SHrc = diagm(inv.(diag(SHrc))) end
+        if (doInv) SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
             temp[a,newB,c,d,s] := Arc[a,b,c,d,s] * SHrc[b,newB]
         end
         A[row,col] = temp
     elseif dir == LEFT && col > 1
         SHrc = SH[row,col-1]
-        if inv SHrc = diagm(inv.(diag(SHrc))) end
+        if (doInv) SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
             temp[a,b,c,newD,s] := Arc[a,b,c,d,s] * SHrc[newD,d]
         end
