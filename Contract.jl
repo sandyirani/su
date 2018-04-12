@@ -5,11 +5,56 @@ function JK(a,b)	# Julia kron,  ordered for julia arrays; returns matrix
 end
 
 
-RowEnv = [ones(1,1,1) for j=1:N, for k=1:N]
-SideEnv = [ones(1,1,1,1) for k=1:N]
-endRow = [ones(1,1,1) for j=1:N]
-endSide = ones(1,1,1,1)
-Dp = D^2
+function calcEnergy()
+  energy = 0
+  initRowEnv()
+  for row = N:-1:1
+    for col=N:-1:3
+      updateSideEnvToLeft(row, col)
+    end
+    for col = 1:N-1
+      energy += contractTwoSite(row,col,true)
+      norm = contractTwoSite(row,col,false)
+      @show(norm)
+    end
+  end
+  return(energy)
+end
+
+function contractTwoSite(row,col,addEnergy)
+  Tlp = conj.(A[row,col])
+  Trp = conj.(A[row,col+1])
+  if addEnergy
+    (Tlpg,Trpg) = applyGate(Tlp,Trp,Htwosite)
+  else
+    (Tlpg,Trpg) = (Tlp,Trp)
+  end
+
+  leftSide = (col == 1? endSide: SideEnv[col-1])
+  newSide = updateSideEnvToRight(leftSide, row, col, A[row,col], Tlpg)
+  newSide = updateSideEnvToRight(newSide, row, col+1, A[row,col+1], Trpg)
+  rightSide = (col == N-1? endSide: SideEnv[col+2])
+  rightSideVec = reshape(rightSide,prod(size(rightSideVec)))
+  newSideVec = reshape(rightSide,prod(size(newSideVec)))
+  energy = newSideVec'*rightSideVec
+  return(energy)
+end
+
+function applyGate(Tl,Tr,g)
+  @tensor begin
+    Tg[a,e,f,s1p,b,c,d,s2p] := Tl[a,x,e,f,s1]*Tr[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
+  end
+  tg = size(Tg)
+  Tg = reshape(Tg,prod(tg[1:4]),prod(tg[5:8]))
+  (U,d,V) = svd(Tg)
+  U = U * diagm(d)
+  newDim = length(d)
+  Tl1 = reshape(U,tg[1],tg[2],tg[3],tg[4],newDim)
+  Tr1 = reshape(V',newDim,tg[5],tg[6],tg[7],tg[8])
+  Tl2 = [Tl1[i,j,k,s,l] for i=1:tg[1], l=1:newDim, j=1:tg[2], k=1:tg[3], s=1:tg[4]]
+  Tr2 = [Tr1[i,j,k,l,s] for j=1:tg[5], k=1:tg[6], l=1:tg[7], i=1:newDim, s=1:tg[8]]
+  return(Tl2, Tr2)
+end
 
 function initRowEnv()
   for j = 1:N-1
@@ -17,12 +62,9 @@ function initRowEnv()
   end
 end
 
-function updateSideEnvToRight(row, col, T, Tp)
-
-  if (row < 1 || row > N) return;
+function updateSideEnvToRight(leftSide, row, col, T, Tp)
 
   newSide = ones(1,1,1,1)
-  lastSide = (col == 1? endSide: SideEnv[col-1])
 
   dimN = (row == 1? 1:D)
   dimS = (row == N? 1:D)
@@ -30,9 +72,9 @@ function updateSideEnvToRight(row, col, T, Tp)
   downEnv = (row == N? endRow[col]: RowEnv[row+1,col])
   ue = size(upEnv)
   de = size(downEnv)
-  ls = size(lastSide)
+  ls = size(leftSide)
 
-  temp = reshape(lastSide,ls[1]*ls[2]*ls[3],ls[4])*reshape(downEnv,de[1],de[2]*de[3])
+  temp = reshape(rightSide,ls[1]*ls[2]*ls[3],ls[4])*reshape(downEnv,de[1],de[2]*de[3])
   temp = reshape(temp,ls[1],ls[2],ls[3],de[2],de[3])
   temp = reshape(temp,ls[1],ls[2]*ls[3]*de[2]*de[3])
   temp2 = transpose(temp)*reshape(upEnv,ue[1],ue[2]*ue[3])
@@ -46,9 +88,7 @@ function updateSideEnvToRight(row, col, T, Tp)
 
 end
 
-function updateSideEnvToLeft(row, col, T, Tp)
-
-  if (row < 1 || row > N) return;
+function updateSideEnvToLeft(row, col)
 
   newSide = ones(1,1,1,1)
   lastSide = (col == N? endSide: SideEnv[col-1])
@@ -66,7 +106,8 @@ function updateSideEnvToLeft(row, col, T, Tp)
   temp2 = reshape(upEnv,ue[1]*ue[2],ue[3])*reshape(temp,ls[1],ls[2]*ls[3]*de[1]*de[2])
   temp2 = reshape(temp2,ue[1],dimN,dimN,ls[2],ls[3],de[1],dimS,dimS)
 
-
+  T = A[row,col]
+  Tp = conj.(A[row,col])
   @tensor begin
     temp3[x,dp,d,y] := temp2[x,ap,a,bp,b,y,cp,c]*T[a,b,c,d,s]*Tp[ap,bp,cp,dp,s]
   end
@@ -75,8 +116,6 @@ function updateSideEnvToLeft(row, col, T, Tp)
 end
 
 function updateRowEnv(row, topDown)
-
-  if (row < 1 || row > N) return;
 
   newRow = [ones(1,1,1) for k = 1:N]
   if (topDown)

@@ -1,7 +1,8 @@
 
-
 using TensorOperations
 using LinearMaps
+
+include("Contract.jl")
 
 UP = 1
 DOWN = 2
@@ -12,17 +13,20 @@ RIGHT = 4
 pd = 2
 N = 5
 D = 3
-A = [zeros(1,1,1,1,pd) for j=1:N, for k = 1:N]
+A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 for j = 1:N
     for k = 1:N
-        idx = (iseven(j+k)? 1, 2)
+        idx = (iseven(j+k)? 1: 2)
         A[j,k][1,1,1,1,idx] = 1
     end
 end
-SV = [eye(1) for j = 1:N-1, for k = 1:N]
-SH = [eye(1) for j = 1:N, for k = 1:N-1]
+SV = [eye(1) for j = 1:N-1, k = 1:N]
+SH = [eye(1) for j = 1:N, k = 1:N-1]
 
-
+RowEnv = [ones(1,1,1) for j=1:N, k=1:N]
+SideEnv = [ones(1,1,1,1) for k=1:N]
+endRow = [ones(1,1,1) for j=1:N]
+endSide = ones(1,1,1,1)
 
 
 #Global variables
@@ -33,7 +37,7 @@ sm = sp'
 lambda = 3.0
 sigZ = Float64[1 0; 0 -1]
 sigX = Float64[0 1; 1 0]
-Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2))
+Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2)),2,2,2,2)
 # order for Htwosite is s1, s2, s1p, s2p
 
 
@@ -46,11 +50,13 @@ function mainLoop()
         println("\n iteration = $iter")
         for j = 1:N
             for k = 1:N-1
-                applyGateAndUpdateRight(taugate, true, j, k) #true = horiz
-                applyGateAndUpdateDown(taugate, false, k, j) #false = vert
+                applyGateAndUpdateRight(taugate, j, k) #true = horiz
+                applyGateAndUpdateDown(taugate, k, j) #false = vert
             end
         end
     end
+    @show("Calculating Energy")
+    calcEnergy()
 end
 
 function applyGateAndUpdateRight(g, row, col)
@@ -64,9 +70,11 @@ function applyGateAndUpdateRight(g, row, col)
         merge(row,col+1,DOWN,false)
         Aleft = A[row,col]
         Aright = A[row,col+1]
-        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright)
+        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright,g)
         A[row,col] = Aleft
         A[row,col+1] = Aright
+        @show(size(SH))
+        @show(size(SH[row,col]))
         SH[row,col] = SH
         merge(row,col,UP,true)
         merge(row,col,DOWN,true)
@@ -89,7 +97,7 @@ function applyGateAndUpdateDown(g, row, col)
         Aleft = A[row,col]
         Aright = A[row+1,col]
         (Aleft,Aright) = rotateTensors(Aleft,Aright)
-        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright)
+        (Aleft,Aright,SH) = applyGateAndTrim(Aleft,Aright,g)
         (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
         A[row,col] = Aleft
         A[row+1,col] = Aright
@@ -128,7 +136,7 @@ function rotateTensorsBack(Ap,Bp)
 end
 
 
-function applyGateAndTrim(Aleft,Aright)
+function applyGateAndTrim(Aleft,Aright,g)
 
         @tensor begin
           ABg[a,e,f,s1p,b,c,d,s2p] := Aleft[a,x,e,f,s1]*Aright[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
@@ -150,6 +158,7 @@ end
 
 
 function merge(row, col, dir, inv)
+    @show(row,col)
     a = size(A[row,col])
     Arc = A[row,col]
     if dir == UP && row > 1
@@ -170,7 +179,7 @@ function merge(row, col, dir, inv)
         SHrc = SH[row,col]
         if inv SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
-            temp[a,newB,n,d,s] := Arc[a,b,c,d,s] * SHrc[b,newB]
+            temp[a,newB,c,d,s] := Arc[a,b,c,d,s] * SHrc[b,newB]
         end
         A[row,col] = temp
     elseif dir == LEFT && col > 1
