@@ -17,17 +17,13 @@ function initRowEnv()
   end
 end
 
-function updateSideEnv(row, col, toRight)
+function updateSideEnvToRight(row, col, T, Tp)
 
   if (row < 1 || row > N) return;
 
   newSide = ones(1,1,1,1)
-  if (toRight)
-    lastSide = (col == 1? endSide: SideEnv[col-1,:])
-  else
-    lastSide = (col == N? endSide: SideEnv[col+1,:])
-  end
-  dimW = (col == 1? || col == N? 1:D)
+  lastSide = (col == 1? endSide: SideEnv[col-1])
+
   dimN = (row == 1? 1:D)
   dimS = (row == N? 1:D)
   upEnv = (row == 1? endRow[col]: RowEnv[row-1,col])
@@ -42,13 +38,39 @@ function updateSideEnv(row, col, toRight)
   temp2 = transpose(temp)*reshape(upEnv,ue[1],ue[2]*ue[3])
   temp2 = reshape(temp2,ls[2],ls[3],dimS,dimS,de[3],dimN,dimN,ue[3])
 
-  T = A[row,col]
-  conjT = conj.(T)
 
   @tensor begin
-    temp3[x,bp,b,y] := temp2[dp,d,cp,c,y,ap,a,x]*T[a,b,c,d,s]*Tconj[ap,bp,cp,dp,s]
+    temp3[x,bp,b,y] := temp2[dp,d,cp,c,y,ap,a,x]*T[a,b,c,d,s]*Tp[ap,bp,cp,dp,s]
   end
-  SideEnv[row,col] = temp3
+  return(temp3)
+
+end
+
+function updateSideEnvToLeft(row, col, T, Tp)
+
+  if (row < 1 || row > N) return;
+
+  newSide = ones(1,1,1,1)
+  lastSide = (col == N? endSide: SideEnv[col-1])
+
+  dimN = (row == 1? 1:D)
+  dimS = (row == N? 1:D)
+  upEnv = (row == 1? endRow[col]: RowEnv[row-1,col])
+  downEnv = (row == N? endRow[col]: RowEnv[row+1,col])
+  ue = size(upEnv)
+  de = size(downEnv)
+  ls = size(lastSide)
+
+  temp = transpose(reshape(downEnv,de[1]*de[2],de[3])*transpose(reshape(lastSide,ls[1]*ls[2]*ls[3],ls[4])))
+  temp = reshape(temp,ls[1],ls[2],ls[3],de[1],de[2])
+  temp2 = reshape(upEnv,ue[1]*ue[2],ue[3])*reshape(temp,ls[1],ls[2]*ls[3]*de[1]*de[2])
+  temp2 = reshape(temp2,ue[1],dimN,dimN,ls[2],ls[3],de[1],dimS,dimS)
+
+
+  @tensor begin
+    temp3[x,dp,d,y] := temp2[x,ap,a,bp,b,y,cp,c]*T[a,b,c,d,s]*Tp[ap,bp,cp,dp,s]
+  end
+  return(temp3)
 
 end
 
