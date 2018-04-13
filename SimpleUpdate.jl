@@ -103,7 +103,6 @@ function applyGateAndUpdateDown(g, row, col)
         Aleft = A[row,col]
         Aright = A[row+1,col]
         (Aleft,Aright) = rotateTensors(Aleft,Aright)
-        @show(size(Aleft), size(Aright))
         (Aleft,Aright,SVnew) = applyGateAndTrim(Aleft,Aright,g)
         (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
         A[row,col] = Aleft
@@ -150,7 +149,9 @@ function applyGateAndTrim(Aleft,Aright,g)
         end
         @show(Aleft)
         @show(Aright)
+        @show(g)
         @show(ABg)
+        @show(size(Aleft), size(Aright))
         a = size(ABg)
         ABg = reshape(ABg,a[1]*a[2]*a[3]*pd,a[5]*a[6]*a[7]*pd)
         (U,d,V) = svd(ABg)
@@ -160,6 +161,8 @@ function applyGateAndTrim(Aleft,Aright,g)
         newSH = diagm(d[1:newDim])
         A2p = reshape(U,a[1],a[2],a[3],pd,newDim)
         B2p = reshape(V',newDim,a[5],a[6],a[7],pd)
+        A2p = renormL2(A2p)
+        B2p = renormL2(B2p)
         A2p = [A2p[i,j,k,s,l] for i=1:a[1], l=1:newDim, j=1:a[2], k=1:a[3], s=1:pd]
         B2p = [B2p[i,j,k,l,s] for j=1:a[5], k=1:a[6], l=1:a[7], i=1:newDim, s=1:pd]
         return(A2p, B2p, newSH)
@@ -199,4 +202,12 @@ function merge(row, col, dir, doInv)
         end
         A[row,col] = temp
     end
+end
+
+function renormL2(T)
+  t = size(T)
+  Tvec = reshape(T,prod(t))
+  norm = abs(Tvec'*Tvec)
+  T = T/sqrt(norm)
+  return(T)
 end
