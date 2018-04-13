@@ -61,7 +61,7 @@ end
 
 function applyGateAndUpdateRight(g, row, col)
 
-println("\n Updating Right: Row = $row,  Col = $col")
+#println("\n Updating Right: Row = $row,  Col = $col")
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
         merge(row,col,LEFT,false)
@@ -75,9 +75,6 @@ println("\n Updating Right: Row = $row,  Col = $col")
         al = size(Aleft)
         ar = size(Aright)
         sh = size(SHnew)
-        if (al[2] != sh[1] || ar[4] != sh[2])
-          @show(al, ar, sh)
-        end
         A[row,col] = Aleft
         A[row,col+1] = Aright
         SH[row,col] = SHnew
@@ -92,7 +89,7 @@ end
 
 function applyGateAndUpdateDown(g, row, col)
 
-  println("\n Updating Down: Row = $row,  Col = $col")
+  #Sprintln("\n Updating Down: Row = $row,  Col = $col")
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
         merge(row,col,LEFT,false)
@@ -147,16 +144,10 @@ function applyGateAndTrim(Aleft,Aright,g)
         @tensor begin
           ABg[a,e,f,s1p,b,c,d,s2p] := Aleft[a,x,e,f,s1]*Aright[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
         end
-        #@show(Aleft)
-        #@show(Aright)
-        #@show(g)
-        #@show(ABg)
-        #@show(size(Aleft), size(Aright))
         a = size(ABg)
         ABg = reshape(ABg,a[1]*a[2]*a[3]*pd,a[5]*a[6]*a[7]*pd)
         (U,d,V) = svd(ABg)
         newDim = min(D,length(d))
-        @show(d)
         U = U[:,1:newDim]
         V = V[:,1:newDim]
         newSH = diagm(d[1:newDim])

@@ -124,6 +124,7 @@ function updateRowEnv(row, topDown)
     lastRow = (row == N? endRow: RowEnv[row+1,:])
   end
   dim = (row ==1 || row == N? 1:D)
+  newRE = ones(1,1,1)
 
   for k = 1:N
     RE = lastRow[k]
