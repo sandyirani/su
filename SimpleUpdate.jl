@@ -61,6 +61,7 @@ end
 
 function applyGateAndUpdateRight(g, row, col)
 
+println("\n Updating Right: Row = $row,  Col = $col")
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
         merge(row,col,LEFT,false)
@@ -91,7 +92,7 @@ end
 
 function applyGateAndUpdateDown(g, row, col)
 
-
+  println("\n Updating Down: Row = $row,  Col = $col")
         merge(row,col,UP,false)
         merge(row,col,DOWN,false)
         merge(row,col,LEFT,false)
@@ -102,17 +103,12 @@ function applyGateAndUpdateDown(g, row, col)
         Aleft = A[row,col]
         Aright = A[row+1,col]
         (Aleft,Aright) = rotateTensors(Aleft,Aright)
-        (Aleft,Aright,SHnew) = applyGateAndTrim(Aleft,Aright,g)
+        @show(size(Aleft), size(Aright))
+        (Aleft,Aright,SVnew) = applyGateAndTrim(Aleft,Aright,g)
         (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
-        al = size(Aleft)
-        ar = size(Aright)
-        sh = size(SHnew)
-        if (al[3] != sh[1] || ar[1] != sh[2])
-          @show(al, ar, sh)
-        end
         A[row,col] = Aleft
         A[row+1,col] = Aright
-        SH[row,col] = SHnew
+        SV[row,col] = SVnew
         merge(row,col,UP,true)
         merge(row,col,RIGHT,true)
         merge(row,col,LEFT,true)
@@ -152,6 +148,9 @@ function applyGateAndTrim(Aleft,Aright,g)
         @tensor begin
           ABg[a,e,f,s1p,b,c,d,s2p] := Aleft[a,x,e,f,s1]*Aright[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
         end
+        @show(Aleft)
+        @show(Aright)
+        @show(ABg)
         a = size(ABg)
         ABg = reshape(ABg,a[1]*a[2]*a[3]*pd,a[5]*a[6]*a[7]*pd)
         (U,d,V) = svd(ABg)
