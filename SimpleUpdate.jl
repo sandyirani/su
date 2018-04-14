@@ -13,7 +13,7 @@ RIGHT = 4
 pd = 2
 N = 5
 D = 3
-Dp = 10
+Dp = 5
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 for j = 1:N
     for k = 1:N
@@ -51,6 +51,7 @@ function mainLoop()
         println("\n iteration = $iter")
         for j = 1:N
             for k = 1:N-1
+                println("\n Updating Right: Row = $j,  Col = $k")
                 applyGateAndUpdateRight(taugate, j, k) #true = horiz
                 applyGateAndUpdateDown(taugate, k, j) #false = vert
             end
@@ -63,55 +64,52 @@ end
 function applyGateAndUpdateRight(g, row, col)
 
 #println("\n Updating Right: Row = $row,  Col = $col")
-        merge(row,col,UP,false)
-        merge(row,col,DOWN,false)
-        merge(row,col,LEFT,false)
-        merge(row,col,RIGHT,false)
-        merge(row,col+1,UP,false)
-        merge(row,col+1,RIGHT,false)
-        merge(row,col+1,DOWN,false)
         Aleft = A[row,col]
         Aright = A[row,col+1]
+        Aleft = merge(Aleft,row,col,UP,false)
+        Aleft = merge(Aleft,row,col,DOWN,false)
+        Aleft = merge(Aleft,row,col,LEFT,false)
+        Aleft = merge(Aleft,row,col,RIGHT,false)
+        Aright = merge(Aright,row,col+1,UP,false)
+        Aright = merge(Aright,row,col+1,RIGHT,false)
+        Aright = merge(Aright,row,col+1,DOWN,false)
         (Aleft,Aright,SHnew) = applyGateAndTrim(Aleft,Aright,g)
-        al = size(Aleft)
-        ar = size(Aright)
-        sh = size(SHnew)
+        Aleft = merge(Aleft,row,col,UP,true)
+        Aleft = merge(Aleft,row,col,DOWN,true)
+        Aleft = merge(Aleft,row,col,LEFT,true)
+        Aright = merge(Aright,row,col+1,UP,true)
+        Aright = merge(Aright,row,col+1,RIGHT,true)
+        Aright = merge(Aright,row,col+1,DOWN,true)
         A[row,col] = Aleft
         A[row,col+1] = Aright
         SH[row,col] = SHnew
-        merge(row,col,UP,true)
-        merge(row,col,DOWN,true)
-        merge(row,col,LEFT,true)
-        merge(row,col+1,UP,true)
-        merge(row,col+1,RIGHT,true)
-        merge(row,col+1,DOWN,true)
 
 end
 
 function applyGateAndUpdateDown(g, row, col)
 
   #Sprintln("\n Updating Down: Row = $row,  Col = $col")
-        merge(row,col,UP,false)
-        merge(row,col,DOWN,false)
-        merge(row,col,LEFT,false)
-        merge(row,col,RIGHT,false)
-        merge(row+1,col,LEFT,false)
-        merge(row+1,col,RIGHT,false)
-        merge(row+1,col,DOWN,false)
-        Aleft = A[row,col]
-        Aright = A[row+1,col]
-        (Aleft,Aright) = rotateTensors(Aleft,Aright)
-        (Aleft,Aright,SVnew) = applyGateAndTrim(Aleft,Aright,g)
-        (Aleft,Aright) = rotateTensorsBack(Aleft,Aright)
-        A[row,col] = Aleft
-        A[row+1,col] = Aright
+        Aup = A[row,col]
+        Adown = A[row+1,col]
+        Aup = merge(Aup,row,col,UP,false)
+        Aup = merge(Aup,row,col,DOWN,false)
+        Aup = merge(Aup,row,col,LEFT,false)
+        Aup = merge(Aup,row,col,RIGHT,false)
+        Adown = merge(Adown,row+1,col,LEFT,false)
+        Adown = merge(Adown,row+1,col,RIGHT,false)
+        Adown = merge(Adown,row+1,col,DOWN,false)
+        (Aup,Adown) = rotateTensors(Aup,Adown)
+        (Aup,Adown,SVnew) = applyGateAndTrim(Aup,Adown,g)
+        (Aup,Adown) = rotateTensorsBack(Aup,Adown)
+        Aup = merge(Aup,row,col,UP,true)
+        Aup = merge(Aup,row,col,RIGHT,true)
+        Aup = merge(Aup,row,col,LEFT,true)
+        Adown = merge(Adown,row+1,col,LEFT,true)
+        Adown = merge(Adown,row+1,col,RIGHT,true)
+        Adown = merge(Adown,row+1,col,DOWN,true)
+        A[row,col] = Aup
+        A[row+1,col] = Adown
         SV[row,col] = SVnew
-        merge(row,col,UP,true)
-        merge(row,col,RIGHT,true)
-        merge(row,col,LEFT,true)
-        merge(row+1,col,LEFT,true)
-        merge(row+1,col,RIGHT,true)
-        merge(row+1,col,DOWN,true)
 
 end
 
@@ -164,38 +162,39 @@ end
 
 
 
-function merge(row, col, dir, doInv)
-    a = size(A[row,col])
-    Arc = A[row,col]
+function merge(Arc,row, col, dir, doInv)
+    a = size(Arc)
+    temp = ones(1,1,1,1,1)
     if dir == UP && row > 1
         SVrc = SV[row-1,col]
         if (doInv) SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
             temp[newA,b,c,d,s] := Arc[a,b,c,d,s] * SVrc[newA,a]
         end
-        A[row,col] = temp
+        return(temp)
     elseif dir == DOWN && row < N
         SVrc = SV[row,col]
         if (doInv) SVrc = diagm(inv.(diag(SVrc))) end
         @tensor begin
             temp[a,b,newC,d,s] := Arc[a,b,c,d,s] * SVrc[c,newC]
         end
-        A[row,col] = temp
+        return(temp)
     elseif dir == RIGHT && col < N
         SHrc = SH[row,col]
         if (doInv) SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
             temp[a,newB,c,d,s] := Arc[a,b,c,d,s] * SHrc[b,newB]
         end
-        A[row,col] = temp
+        return(temp)
     elseif dir == LEFT && col > 1
         SHrc = SH[row,col-1]
         if (doInv) SHrc = diagm(inv.(diag(SHrc))) end
         @tensor begin
             temp[a,b,c,newD,s] := Arc[a,b,c,d,s] * SHrc[newD,d]
         end
-        A[row,col] = temp
+        return(temp)
     end
+    return(Arc)
 end
 
 function renormL2(T)

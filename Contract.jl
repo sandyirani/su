@@ -17,12 +17,13 @@ function calcEnergy()
     end
     for col = 1:N-1
         println("\n Updating Right: Row = $row,  Col = $col")
-      energy += contractTwoSite(row,col,true)
-      norm = contractTwoSite(row,col,false)
-      leftSide = (col == 1? endSide: SideEnv[col-1])
-      SideEnv[col] = updateSideEnvToRight(leftSide, row, col, A[row,col], conj.(A[row,col]))
-      @show(norm)
+        norm = contractTwoSite(row,col,false)
+        energy += (contractTwoSite(row,col,true)/norm)
+        leftSide = (col == 1? endSide: SideEnv[col-1])
+        SideEnv[col] = updateSideEnvToRight(leftSide, row, col, A[row,col], conj.(A[row,col]))
+        @show(norm)
     end
+    (row > 1) && updateRowEnv(row,false)
   end
   return(energy)
 end
@@ -40,8 +41,8 @@ function contractTwoSite(row,col,addEnergy)
   newSide = updateSideEnvToRight(leftSide, row, col, A[row,col], Tlpg)
   newSide = updateSideEnvToRight(newSide, row, col+1, A[row,col+1], Trpg)
   rightSide = (col == N-1? endSide: SideEnv[col+2])
-  rightSideVec = reshape(rightSide,prod(size(rightSideVec)))
-  newSideVec = reshape(rightSide,prod(size(newSideVec)))
+  rightSideVec = reshape(rightSide,prod(size(rightSide)))
+  newSideVec = reshape(newSide,prod(size(newSide)))
   energy = newSideVec'*rightSideVec
   return(energy)
 end
@@ -80,7 +81,7 @@ function updateSideEnvToRight(leftSide, row, col, T, Tp)
   de = size(downEnv)
   ls = size(leftSide)
 
-  temp = reshape(rightSide,ls[1]*ls[2]*ls[3],ls[4])*reshape(downEnv,de[1],de[2]*de[3])
+  temp = reshape(leftSide,ls[1]*ls[2]*ls[3],ls[4])*reshape(downEnv,de[1],de[2]*de[3])
   temp = reshape(temp,ls[1],ls[2],ls[3],de[2],de[3])
   temp = reshape(temp,ls[1],ls[2]*ls[3]*de[2]*de[3])
   temp2 = transpose(temp)*reshape(upEnv,ue[1],ue[2]*ue[3])
@@ -97,7 +98,7 @@ end
 function updateSideEnvToLeft(row, col)
 
   newSide = ones(1,1,1,1)
-  lastSide = (col == N? endSide: SideEnv[col-1])
+  lastSide = (col == N? endSide: SideEnv[col+1])
 
   dimN = (row == 1? 1:D)
   dimS = (row == N? 1:D)
@@ -106,6 +107,7 @@ function updateSideEnvToLeft(row, col)
   ue = size(upEnv)
   de = size(downEnv)
   ls = size(lastSide)
+  @show(ue,de,ls)
 
   temp = transpose(reshape(downEnv,de[1]*de[2],de[3])*transpose(reshape(lastSide,ls[1]*ls[2]*ls[3],ls[4])))
   temp = reshape(temp,ls[1],ls[2],ls[3],de[1],de[2])
