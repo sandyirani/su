@@ -4,17 +4,23 @@ function JK(a,b)	# Julia kron,  ordered for julia arrays; returns matrix
     reshape(Float64[a[i,ip] * b[j,jp] for i=1:a1, j=1:b1, ip=1:a2, jp=1:b2],a1*b1,a2*b2)
 end
 
-
+#Need to normalize this!
+#Need to add in SH and SV matrices
 function calcEnergy()
   energy = 0
   initRowEnv()
+  println("RowEnv has been initialized.")
   for row = N:-1:1
     for col=N:-1:3
-      updateSideEnvToLeft(row, col)
+      @show(col)
+      SideEnv[col] = updateSideEnvToLeft(row, col)
     end
     for col = 1:N-1
+        println("\n Updating Right: Row = $row,  Col = $col")
       energy += contractTwoSite(row,col,true)
       norm = contractTwoSite(row,col,false)
+      leftSide = (col == 1? endSide: SideEnv[col-1])
+      SideEnv[col] = updateSideEnvToRight(leftSide, row, col, A[row,col], conj.(A[row,col]))
       @show(norm)
     end
   end
@@ -134,20 +140,20 @@ function updateRowEnv(row, topDown)
     Tconj = conj.(A[row,k])
     if (topDown)
       @tensor begin
-        NewRE[a,fp,f,ep,e,c,dp,d] := RE[a,bp,b,c]*T[b,d,e,f,s]*T[bp,dp,ep,fp,s]
+        newRE[a,fp,f,ep,e,c,dp,d] := RE[a,bp,b,c]*T[b,d,e,f,s]*T[bp,dp,ep,fp,s]
       end
     else
       @tensor begin
-        NewRE[fp,f,a,dp,d,ep,e,c] := RE[a,bp,b,c]*T[d,e,b,f,s]*T[dp,ep,bp,fp,s]
+        newRE[fp,f,a,dp,d,ep,e,c] := RE[a,bp,b,c]*T[d,e,b,f,s]*T[dp,ep,bp,fp,s]
       end
     end
-    nre = size(NewRE)
-    NewRE = reshape(NewRE,nre[1]*nre[2]*nre[3],nre[4]*nre[5],nre[6]*nre[7]*nre[8])
+    nre = size(newRE)
+    newRE = reshape(newRE,nre[1]*nre[2]*nre[3],nre[4]*nre[5],nre[6]*nre[7]*nre[8])
     newRow[k] = newRE
   end
 
   if (row > 1 && row < N)
-    RowEnv[row,:] = approx(newRow,Dp)
+    RowEnv[row,:] = approxMPS(newRow,Dp)
   else
     RowEnv[row,:] = newRow
   end
@@ -182,7 +188,7 @@ function approxMPS(Big,Dp)
 
 
   NormB = calcNorm(Big)
-  @show(NormB)
+  #@show(NormB)
 
 
   for iter = 1:20 #main Loop
@@ -209,7 +215,7 @@ function approxMPS(Big,Dp)
       newiVec = \(R,S)
       #i == N-1 && @show(sum(abs.(R*newiVec-S))/sum(abs.(S)))
       dist = NormB + newiVec'*R*newiVec - 2*real(S'*newiVec)
-      i == N-1 && @show(dist/NormB)
+      #i == N-1 && @show(dist/NormB)
 
       New[i] = reshape(newiVec,l[2],pd[i],r[2])
       Biconj = conj.(Big[i])
@@ -232,6 +238,7 @@ function approxMPS(Big,Dp)
 
     end
   end
+  return(New)
 
 end
 
