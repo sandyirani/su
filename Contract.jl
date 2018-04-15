@@ -8,6 +8,7 @@ end
 #Need to add in SH and SV matrices
 function calcEnergy()
   energy = 0
+  mergeA()
   initRowEnv()
   println("RowEnv has been initialized.")
   for row = N:-1:1
@@ -20,17 +21,35 @@ function calcEnergy()
         norm = contractTwoSite(row,col,false)
         energy += (contractTwoSite(row,col,true)/norm)
         leftSide = (col == 1? endSide: SideEnv[col-1])
-        SideEnv[col] = updateSideEnvToRight(leftSide, row, col, A[row,col], conj.(A[row,col]))
+        SideEnv[col] = updateSideEnvToRight(leftSide, row, col, AM[row,col], conj.(AM[row,col]))
         @show(norm)
     end
     (row > 1) && updateRowEnv(row,false)
   end
-  return(energy)
+  return(energy/(N*(N-1)))
 end
 
+function mergeA()
+    for row = 1:N
+        for col = 1:N
+            temp = A[row,col]
+            if (row < N)
+                temp = merge(temp,row,col,DOWN,false)
+            end
+            #=
+            if (col < N)
+                temp = merge(temp,row,col,RIGHT,false)
+            end
+            =#
+            AM[row,col] = temp
+        end
+    end
+end
+
+
 function contractTwoSite(row,col,addEnergy)
-  Tlp = conj.(A[row,col])
-  Trp = conj.(A[row,col+1])
+  Tlp = conj.(AM[row,col])
+  Trp = conj.(AM[row,col+1])
   if addEnergy
     (Tlpg,Trpg) = applyGate(Tlp,Trp,Htwosite)
   else
@@ -38,8 +57,8 @@ function contractTwoSite(row,col,addEnergy)
   end
 
   leftSide = (col == 1? endSide: SideEnv[col-1])
-  newSide = updateSideEnvToRight(leftSide, row, col, A[row,col], Tlpg)
-  newSide = updateSideEnvToRight(newSide, row, col+1, A[row,col+1], Trpg)
+  newSide = updateSideEnvToRight(leftSide, row, col, AM[row,col], Tlpg)
+  newSide = updateSideEnvToRight(newSide, row, col+1, AM[row,col+1], Trpg)
   rightSide = (col == N-1? endSide: SideEnv[col+2])
   rightSideVec = reshape(rightSide,prod(size(rightSide)))
   newSideVec = reshape(newSide,prod(size(newSide)))
@@ -114,8 +133,8 @@ function updateSideEnvToLeft(row, col)
   temp2 = reshape(upEnv,ue[1]*ue[2],ue[3])*reshape(temp,ls[1],ls[2]*ls[3]*de[1]*de[2])
   temp2 = reshape(temp2,ue[1],dimN,dimN,ls[2],ls[3],de[1],dimS,dimS)
 
-  T = A[row,col]
-  Tp = conj.(A[row,col])
+  T = AM[row,col]
+  Tp = conj.(AM[row,col])
   @tensor begin
     temp3[x,dp,d,y] := temp2[x,ap,a,bp,b,y,cp,c]*T[a,b,c,d,s]*Tp[ap,bp,cp,dp,s]
   end
@@ -138,8 +157,8 @@ function updateRowEnv(row, topDown)
     RE = lastRow[k]
     re = size(RE)
     RE = reshape(RE,re[1],dim,dim,re[3])
-    T = A[row,k]
-    Tconj = conj.(A[row,k])
+    T = AM[row,k]
+    Tconj = conj.(AM[row,k])
     if (topDown)
       @tensor begin
         newRE[a,fp,f,ep,e,c,dp,d] := RE[a,bp,b,c]*T[b,d,e,f,s]*T[bp,dp,ep,fp,s]
@@ -244,14 +263,14 @@ function approxMPS(Big,Dp)
 
 end
 
-function calcNorm(A)
+function calcNorm(T)
 
   left = eye(1)
   for i = 1:N
-    Aiconj = conj.(A[i])
-    Ai = A[i]
+    Ticonj = conj.(T[i])
+    Ti = T[i]
     @tensor begin
-      NewLeft[x,y] := Aiconj[u,s,x]*Ai[w,s,y]*left[u,w]
+      NewLeft[x,y] := Ticonj[u,s,x]*Ti[w,s,y]*left[u,w]
     end
     left = NewLeft
   end

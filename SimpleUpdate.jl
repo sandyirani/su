@@ -11,7 +11,7 @@ RIGHT = 4
 
 
 pd = 2
-N = 5
+N = 3
 D = 3
 Dp = 5
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
@@ -23,6 +23,8 @@ for j = 1:N
 end
 SV = [eye(1) for j = 1:N-1, k = 1:N]
 SH = [eye(1) for j = 1:N, k = 1:N-1]
+
+AM = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 
 RowEnv = [ones(1,1,1) for j=1:N, k=1:N]
 SideEnv = [ones(1,1,1,1) for k=1:N]
@@ -51,7 +53,6 @@ function mainLoop()
         println("\n iteration = $iter")
         for j = 1:N
             for k = 1:N-1
-                println("\n Updating Right: Row = $j,  Col = $k")
                 applyGateAndUpdateRight(taugate, j, k) #true = horiz
                 applyGateAndUpdateDown(taugate, k, j) #false = vert
             end
