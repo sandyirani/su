@@ -236,12 +236,34 @@ function approxMPS(Big,Dp)
       S = reshape(transpose(LeftBN)*reshape(Big[i],l[1],pd[i]*r[1]),l[2]*pd[i],r[1])
       S = reshape(S*RightBN,l[2]*pd[i]*r[2])
 
+      newiVec = zeros(length(S))
+      #=
+      try
+          newiVec = \(R,S)
+      catch
+           @show(rank(LeftNN), rank(RightNN))
+           @show(LeftNN,RightNN)
+           #@show(S)
+      end
+      =#
       newiVec = \(R,S)
+      New[i] = reshape(newiVec,l[2],pd[i],r[2])
+
       #i == N-1 && @show(sum(abs.(R*newiVec-S))/sum(abs.(S)))
       dist = (NormB + newiVec'*R*newiVec - 2*real(S'*newiVec))/NormB
+      if (dist < -.1)
+          @show(iter)
+          @show(i)
+          @show(dist)
+          @show((calcNorm(New)-newiVec'*R*newiVec)/NormB)
+          @show((calcOverlap(Big,New)-S'*newiVec)/NormB)
+          @show(calcOverlap(New,New))
+          testOverlap2(New,New)
+          error()
+      end
       #i == N-1 && @show(dist/NormB)
 
-      New[i] = reshape(newiVec,l[2],pd[i],r[2])
+
       Biconj = conj.(Big[i])
       Ni = New[i]
       Niconj = conj.(Ni)
@@ -276,6 +298,22 @@ function calcNorm(T)
     Ti = T[i]
     @tensor begin
       NewLeft[x,y] := Ticonj[u,s,x]*Ti[w,s,y]*left[u,w]
+    end
+    left = NewLeft
+  end
+  norm = trace(left)
+  return(norm)
+
+end
+
+function calcOverlap(T,S)
+
+  left = eye(1)
+  for i = 1:N
+    Siconj = conj.(S[i])
+    Ti = T[i]
+    @tensor begin
+      NewLeft[x,y] := Siconj[u,s,x]*Ti[w,s,y]*left[u,w]
     end
     left = NewLeft
   end
