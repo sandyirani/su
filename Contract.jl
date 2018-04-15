@@ -8,12 +8,13 @@ end
 #Need to add in SH and SV matrices
 function calcEnergy()
   energy = 0
+  #testDiag()
   mergeA()
   initRowEnv()
   println("RowEnv has been initialized.")
   for row = N:-1:1
     for col=N:-1:3
-      @show(col)
+      #@show(col)
       SideEnv[col] = updateSideEnvToLeft(row, col)
     end
     for col = 1:N-1
@@ -126,7 +127,7 @@ function updateSideEnvToLeft(row, col)
   ue = size(upEnv)
   de = size(downEnv)
   ls = size(lastSide)
-  @show(ue,de,ls)
+  #@show(ue,de,ls)
 
   temp = transpose(reshape(downEnv,de[1]*de[2],de[3])*transpose(reshape(lastSide,ls[1]*ls[2]*ls[3],ls[4])))
   temp = reshape(temp,ls[1],ls[2],ls[3],de[1],de[2])
@@ -173,6 +174,8 @@ function updateRowEnv(row, topDown)
     newRow[k] = newRE
   end
 
+  maxDim = maximum([size(newRow[k])[3] for k=1:N-1])
+  #if (maxDim > Dp)
   if (row > 1 && row < N)
     RowEnv[row,:] = approxMPS(newRow,Dp)
   else
@@ -211,8 +214,8 @@ function approxMPS(Big,Dp)
   NormB = calcNorm(Big)
   #@show(NormB)
 
-
-  for iter = 1:20 #main Loop
+  dist = 0
+  for iter = 1:40 #main Loop
 
     for ii=-N:N		# if negative, going right to left
 
@@ -235,7 +238,7 @@ function approxMPS(Big,Dp)
 
       newiVec = \(R,S)
       #i == N-1 && @show(sum(abs.(R*newiVec-S))/sum(abs.(S)))
-      dist = NormB + newiVec'*R*newiVec - 2*real(S'*newiVec)
+      dist = (NormB + newiVec'*R*newiVec - 2*real(S'*newiVec))/NormB
       #i == N-1 && @show(dist/NormB)
 
       New[i] = reshape(newiVec,l[2],pd[i],r[2])
@@ -259,6 +262,8 @@ function approxMPS(Big,Dp)
 
     end
   end
+  @show(dist)
+  @show(NormB)
   return(New)
 
 end

@@ -3,6 +3,7 @@ using TensorOperations
 using LinearMaps
 
 include("Contract.jl")
+include("Test.jl")
 
 UP = 1
 DOWN = 2
@@ -11,9 +12,9 @@ RIGHT = 4
 
 
 pd = 2
-N = 3
+N = 5
 D = 3
-Dp = 5
+Dp = 10
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 for j = 1:N
     for k = 1:N
