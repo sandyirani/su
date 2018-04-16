@@ -175,7 +175,7 @@ function updateRowEnv(row, topDown)
   maxDim = maximum([size(newRow[k])[3] for k=1:N-1])
   #if (maxDim > Dp)
   if (row > 1 && row < N)
-    RowEnv[row,:] = approxMPS(newRow,Dp)
+    RowEnv[row,:] = approxMPS2(newRow,Dp)
   else
     RowEnv[row,:] = newRow
   end
@@ -339,7 +339,7 @@ function approxMPS2(Big,Dp)
     (U,d,V,trunc) = dosvdtrunc(both,l[3])
     dim = length(d)
     New[j] = reshape(U*diagm(d),l[1],l[2],dim)
-    New[j+1] = reshape(V',dim,r[2],r[3])
+    New[j+1] = reshape(V,dim,r[2],r[3])
   end
 
   for j = 1:N-1
@@ -353,8 +353,15 @@ function approxMPS2(Big,Dp)
     (U,d,V,trunc) = dosvdtrunc(both,Dp)
     dim = length(d)
     New[j] = reshape(U,l[1],l[2],dim)
-    New[j+1] = reshape(diagm(d)*V',dim,r[2],r[3])
+    New[j+1] = reshape(diagm(d)*V,dim,r[2],r[3])
   end
+
+  normBig = calcNorm(Big)
+  normNew = calcNorm(New)
+  overlap = calcOverlap(Big,New)
+  @show((normBig+normNew-2*real(overlap))/normBig)
+
+  return(New)
 
 end
 
