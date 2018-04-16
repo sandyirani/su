@@ -37,11 +37,9 @@ function mergeA()
             if (row < N)
                 temp = merge(temp,row,col,DOWN,false)
             end
-            #=
             if (col < N)
                 temp = merge(temp,row,col,RIGHT,false)
             end
-            =#
             AM[row,col] = temp
         end
     end
@@ -189,9 +187,18 @@ function approxMPS(Big,Dp)
 
   pd = [size(Big[j])[2] for j=1:N] #particle dimensions
 
-  New = [rand(Dp,pd[j],Dp) for j = 1:N]
-  New[1] = rand(1,pd[1],Dp)
-  New[N] = rand(Dp,pd[N],1)
+  New = [zeros(Dp,pd[j],Dp) for j = 1:N]
+  dim = min(Dp,size(Big[1])[3])
+  New[1] = zeros(1,pd[1],Dp)
+  New[1][1,1:pd[1],1:dim] = Big[1][1,1:pd[1],1:dim]
+  dim = min(Dp,size(Big[N])[1])
+  New[N] = zeros(Dp,pd[N],1)
+  New[N][1:dim,1:pd[N],1] = Big[N][1:dim,1:pd[N],1]
+  for j = 2:N-1
+      dim1 = min(Dp,size(Big[j])[1])
+      dim2 = min(Dp,size(Big[j])[3])
+      New[j][1:dim1,1:pd[j],1:dim2] = Big[j][1:dim1,1:pd[j],1:dim2]
+  end
 
   BN = [eye(1) for j = 1:N]
   NN = [eye(1) for j = 1:N]
@@ -259,6 +266,7 @@ function approxMPS(Big,Dp)
           @show((calcOverlap(Big,New)-S'*newiVec)/NormB)
           @show(calcOverlap(New,New))
           testOverlap2(New,New)
+          @show(New[i])
           error()
       end
       #i == N-1 && @show(dist/NormB)
