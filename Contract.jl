@@ -322,3 +322,49 @@ function calcOverlap(T,S)
   return(norm)
 
 end
+
+
+function approxMPS2(Big,Dp)
+
+  New = [ones(1,1,1) for j = 1:N]
+
+  for j = N-1:-1:2
+    left = Big[j]
+    right = (j < N-1? New[j+1]: Big[j+1])
+    l = size(left)
+    r = size(right)
+    left = reshape(left,l[1]*l[2],l[3])
+    right = reshape(right,r[1],r[2]*r[3])
+    both = left*right
+    (U,d,V,trunc) = dosvdtrunc(both,l[3])
+    dim = length(d)
+    New[j] = reshape(U*diagm(d),l[1],l[2],dim)
+    New[j+1] = reshape(V',dim,r[2],r[3])
+  end
+
+  for j = 1:N-1
+    left = (j > 1? New[j]: Big[j])
+    right = Big[j+1]
+    l = size(left)
+    r = size(right)
+    left = reshape(left,l[1]*l[2],l[3])
+    right = reshape(right,r[1],r[2]*r[3])
+    both = left*right
+    (U,d,V,trunc) = dosvdtrunc(both,Dp)
+    dim = length(d)
+    New[j] = reshape(U,l[1],l[2],dim)
+    New[j+1] = reshape(diagm(d)*V',dim,r[2],r[3])
+  end
+
+end
+
+function dosvdtrunc(AA,m)		# AA a matrix;  keep at most m states
+    (u,d,v) = svd(AA)
+    prob = dot(d,d)		# total probability
+    mm = min(m,length(d))	# number of states to keep
+    d = d[1:mm]			# middle matrix in vector form
+    trunc = prob - dot(d,d)
+    U = u[:,1:mm]
+    V = v[:,1:mm]'
+    (U,d,V,trunc)		# AA == U * diagm(d) * V	with error trunc
+end
