@@ -185,6 +185,7 @@ end
 
 function approxMPS(Big,Dp)
 
+  testOverlap2(Big,Big)
   pd = [size(Big[j])[2] for j=1:N] #particle dimensions
 
   New = [zeros(Dp,pd[j],Dp) for j = 1:N]
@@ -244,15 +245,6 @@ function approxMPS(Big,Dp)
       S = reshape(S*RightBN,l[2]*pd[i]*r[2])
 
       newiVec = zeros(length(S))
-      #=
-      try
-          newiVec = \(R,S)
-      catch
-           @show(rank(LeftNN), rank(RightNN))
-           @show(LeftNN,RightNN)
-           #@show(S)
-      end
-      =#
       newiVec = \(R,S)
       New[i] = reshape(newiVec,l[2],pd[i],r[2])
 
