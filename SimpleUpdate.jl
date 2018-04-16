@@ -12,7 +12,7 @@ RIGHT = 4
 
 
 pd = 2
-N = 5
+N = 4
 D = 3
 Dp = 10
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
@@ -25,7 +25,7 @@ end
 SV = [eye(1) for j = 1:N-1, k = 1:N]
 SH = [eye(1) for j = 1:N, k = 1:N-1]
 
-AM = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
+
 
 RowEnv = [ones(1,1,1) for j=1:N, k=1:N]
 SideEnv = [ones(1,1,1,1) for k=1:N]
@@ -37,11 +37,11 @@ endSide = ones(1,1,1,1)
 sz = Float64[0.5 0; 0 -0.5]
 sp = Float64[0 1; 0 0]
 sm = sp'
-#Htwosite = reshape(JK(sz,sz) + 0.5 * JK(sp,sm) + 0.5 * JK(sm,sp),2,2,2,2)
+Htwosite = reshape(JK(sz,sz) + 0.5 * JK(sp,sm) + 0.5 * JK(sm,sp),2,2,2,2)
 lambda = 3.0
 sigZ = Float64[1 0; 0 -1]
 sigX = Float64[0 1; 1 0]
-Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2)),2,2,2,2)
+#Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2)),2,2,2,2)
 # order for Htwosite is s1, s2, s1p, s2p
 
 

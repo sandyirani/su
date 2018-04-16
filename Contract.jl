@@ -7,11 +7,21 @@ end
 #Need to normalize this!
 #Need to add in SH and SV matrices
 function calcEnergy()
-  energy = 0
   #testDiag()
-  mergeA()
-  initRowEnv()
+  energy = 0
+  AM = mergeA()
+  energy += getEnergy(AM)
+  AM = rotateGrid(AM)
+  energy += getEnergy(AM)
+  return(energy/N)
+end
+
+
+function getEnergy(AM)
+
+  initRowEnv(AM)
   println("RowEnv has been initialized.")
+  energy = 0
   for row = N:-1:1
     for col=N:-1:3
       #@show(col)
@@ -27,10 +37,11 @@ function calcEnergy()
     end
     (row > 1) && updateRowEnv(row,false)
   end
-  return(energy/(N*(N-1)))
+  return(energy)
 end
 
 function mergeA()
+    AM = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
     for row = 1:N
         for col = 1:N
             temp = A[row,col]
@@ -43,10 +54,11 @@ function mergeA()
             AM[row,col] = temp
         end
     end
+    return(AM)
 end
 
 
-function contractTwoSite(row,col,addEnergy)
+function contractTwoSite(AM,row,col,addEnergy)
   Tlp = conj.(AM[row,col])
   Trp = conj.(AM[row,col+1])
   if addEnergy
@@ -81,13 +93,13 @@ function applyGate(Tl,Tr,g)
   return(Tl2, Tr2)
 end
 
-function initRowEnv()
+function initRowEnv(AM)
   for j = 1:N-1
-    updateRowEnv(j,true)
+    updateRowEnv(AM,j,true)
   end
 end
 
-function updateSideEnvToRight(leftSide, row, col, T, Tp)
+function updateSideEnvToRight(AM,leftSide, row, col, T, Tp)
 
   newSide = ones(1,1,1,1)
 
@@ -113,7 +125,7 @@ function updateSideEnvToRight(leftSide, row, col, T, Tp)
 
 end
 
-function updateSideEnvToLeft(row, col)
+function updateSideEnvToLeft(AM,row, col)
 
   newSide = ones(1,1,1,1)
   lastSide = (col == N? endSide: SideEnv[col+1])
@@ -141,7 +153,7 @@ function updateSideEnvToLeft(row, col)
 
 end
 
-function updateRowEnv(row, topDown)
+function updateRowEnv(AM,row, topDown)
 
   newRow = [ones(1,1,1) for k = 1:N]
   if (topDown)
@@ -374,4 +386,24 @@ function dosvdtrunc(AA,m)		# AA a matrix;  keep at most m states
     U = u[:,1:mm]
     V = v[:,1:mm]'
     (U,d,V,trunc)		# AA == U * diagm(d) * V	with error trunc
+end
+
+function rotateTensor(T)
+
+    t = size(T)
+
+    T2 = [T[a,b,c,d,s] for b = 1:t[2], c = 1:t[3], d = 1:t[4], a = 1:t[1], s = 1:pd]
+
+    return(T2)
+
+end
+
+function rotateGrid(AM)
+  AMnew = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
+  for row = 1:N
+    for col = 1:N
+      AMnew[row,col] = rotateTensor(AM[N-col+1,row])
+    end
+  end
+  return(AMnew)
 end
