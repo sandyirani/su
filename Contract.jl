@@ -37,6 +37,7 @@ function getEnergy(AM)
         SideEnv[col] = updateSideEnvToRight(AM,leftSide, row, col, AM[row,col], conj.(AM[row,col]))
         @show(norm)
     end
+    println("\n Finished row $row")
     (row > 1) && updateRowEnv(AM,row,false)
   end
   return(energy)
@@ -199,7 +200,7 @@ end
 
 function approxMPS(Big,Dp)
 
-  testOverlap2(Big,Big)
+
   pd = [size(Big[j])[2] for j=1:N] #particle dimensions
 
   New = [zeros(Dp,pd[j],Dp) for j = 1:N]
@@ -272,7 +273,6 @@ function approxMPS(Big,Dp)
           @show((calcOverlap(Big,New)-S'*newiVec)/NormB)
           @show(calcOverlap(New,New))
           testOverlap2(New,New)
-          @show(New[i])
 
           error()
       end

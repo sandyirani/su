@@ -12,8 +12,8 @@ RIGHT = 4
 
 
 pd = 2
-N = 5
-D = 3
+N = 4
+D = 2
 Dp = 10
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 for j = 1:N
@@ -44,26 +44,28 @@ sigX = Float64[0 1; 1 0]
 #Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2)),2,2,2,2)
 # order for Htwosite is s1, s2, s1p, s2p
 
-
-
-
-
-
 function mainLoop()
-    numIter = 100
-    tau = .2
+  numIters = [1000,2000,8000]
+  taus = [.1,.01,.001]
+  for stage = 1:3
+    tau = taus[stage]
+    numIter = numIters[stage]
     for iter = 1:numIter
-        taugate = reshape(expm(-tau * reshape(Htwosite,4,4)),2,2,2,2)
-        println("\n iteration = $iter")
-        for j = 1:N
-            for k = 1:N-1
-                applyGateAndUpdateRight(taugate, j, k) #true = horiz
-                applyGateAndUpdateDown(taugate, k, j) #false = vert
-            end
+      taugate = reshape(expm(-tau * reshape(Htwosite,4,4)),2,2,2,2)
+      #println("\n iteration = $iter")
+      for j = 1:N
+        for k = 1:N-1
+          applyGateAndUpdateRight(taugate, j, k) #true = horiz
+          applyGateAndUpdateDown(taugate, k, j) #false = vert
         end
+      end
     end
-    @show("Calculating Energy")
-    calcEnergy()
+    println("\n End of stage $stage")
+  end
+  println("Calculating Energy")
+  #testNorms()
+  energy = calcEnergy()
+  println("\n Energy per site = $energy")
 end
 
 function applyGateAndUpdateRight(g, row, col)

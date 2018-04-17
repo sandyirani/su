@@ -71,9 +71,28 @@ function testOverlap(T,S,k)
 
 end
 
+function testNorms()
+  for j = 1:N
+    for k = 1:N
+      a = size(A[j,k])
+      Avec = reshape(A[j,k],prod(a))
+      norm = Avec'*Avec
+      println("Norm of ($j,$k) = $norm")
+    end
+  end       
+end
+
 function testOverlap2(T,S)
 
   M = [eye(2) for j=1:N]
+
+  for i = 1:N
+    SiVec = reshape(S[i],prod(size(S[i])))
+    TiVec = reshape(T[i],prod(size(T[i])))
+    if (length(SiVec) == length(TiVec))
+      @show(SiVec'*TiVec)
+    end
+  end
 
   for i = 1:N
     Siconj = conj.(S[i])
@@ -92,9 +111,19 @@ function testOverlap2(T,S)
       Right = eye(size(M[N])[2])
       for j = 1:split
           Left = Left*M[j]
+          tj = size(T[j])
+          sj = size(S[j])
+          if (tj[3] == sj[3])
+            @show(trace(reshape(Left,tj[3],tj[3])))
+          end
       end
       for j = N:-1:split+1
           Right = M[j]*Right
+          tj = size(T[j])
+          sj = size(S[j])
+          if (tj[1] == sj[1])
+            @show(trace(reshape(Right,tj[1],tj[1])))
+          end
       end
       final = Left*Right
       @show(final)
