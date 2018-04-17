@@ -11,9 +11,10 @@ function calcEnergy()
   energy = 0
   AM = mergeA()
   energy += getEnergy(AM)
+  println("Done with horizontal edges.")
   AM = rotateGrid(AM)
   energy += getEnergy(AM)
-  return(energy/N)
+  return(energy/N^2)
 end
 
 
@@ -25,17 +26,18 @@ function getEnergy(AM)
   for row = N:-1:1
     for col=N:-1:3
       #@show(col)
-      SideEnv[col] = updateSideEnvToLeft(row, col)
+      SideEnv[col] = updateSideEnvToLeft(AM,row, col)
     end
     for col = 1:N-1
         println("\n Updating Right: Row = $row,  Col = $col")
-        norm = contractTwoSite(row,col,false)
-        energy += (contractTwoSite(row,col,true)/norm)
+        norm = contractTwoSite(AM,row,col,false)
+        edgeE = contractTwoSite(AM,row,col,true)/norm
+        energy += edgeE
         leftSide = (col == 1? endSide: SideEnv[col-1])
-        SideEnv[col] = updateSideEnvToRight(leftSide, row, col, AM[row,col], conj.(AM[row,col]))
+        SideEnv[col] = updateSideEnvToRight(AM,leftSide, row, col, AM[row,col], conj.(AM[row,col]))
         @show(norm)
     end
-    (row > 1) && updateRowEnv(row,false)
+    (row > 1) && updateRowEnv(AM,row,false)
   end
   return(energy)
 end
@@ -68,8 +70,8 @@ function contractTwoSite(AM,row,col,addEnergy)
   end
 
   leftSide = (col == 1? endSide: SideEnv[col-1])
-  newSide = updateSideEnvToRight(leftSide, row, col, AM[row,col], Tlpg)
-  newSide = updateSideEnvToRight(newSide, row, col+1, AM[row,col+1], Trpg)
+  newSide = updateSideEnvToRight(AM,leftSide, row, col, AM[row,col], Tlpg)
+  newSide = updateSideEnvToRight(AM,newSide, row, col+1, AM[row,col+1], Trpg)
   rightSide = (col == N-1? endSide: SideEnv[col+2])
   rightSideVec = reshape(rightSide,prod(size(rightSide)))
   newSideVec = reshape(newSide,prod(size(newSide)))
@@ -402,7 +404,7 @@ function rotateGrid(AM)
   AMnew = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
   for row = 1:N
     for col = 1:N
-      AMnew[row,col] = rotateTensor(AM[N-col+1,row])
+      AMnew[row,col] = rotateTensor(AM[col,N-row+1])
     end
   end
   return(AMnew)

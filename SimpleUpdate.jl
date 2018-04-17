@@ -12,7 +12,7 @@ RIGHT = 4
 
 
 pd = 2
-N = 4
+N = 5
 D = 3
 Dp = 10
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
@@ -43,6 +43,9 @@ sigZ = Float64[1 0; 0 -1]
 sigX = Float64[0 1; 1 0]
 #Htwosite = reshape(JK(sigZ,sigZ) + lambda*0.25*JK(eye(2),sigX) + lambda*0.25*JK(sigX,eye(2)),2,2,2,2)
 # order for Htwosite is s1, s2, s1p, s2p
+
+
+
 
 
 
