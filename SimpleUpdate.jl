@@ -46,6 +46,7 @@ sigX = Float64[0 1; 1 0]
 
 function mainLoop()
   numIters = [1000,2000,8000]
+  #numIters = [100,200,800]
   taus = [.1,.01,.001]
   for stage = 1:3
     tau = taus[stage]
