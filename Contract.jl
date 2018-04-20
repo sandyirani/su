@@ -1,8 +1,4 @@
-function JK(a,b)	# Julia kron,  ordered for julia arrays; returns matrix
-    (a1,a2) = size(a)
-    (b1,b2) = size(b)
-    reshape(Float64[a[i,ip] * b[j,jp] for i=1:a1, j=1:b1, ip=1:a2, jp=1:b2],a1*b1,a2*b2)
-end
+
 
 #Need to normalize this!
 #Need to add in SH and SV matrices
@@ -80,21 +76,7 @@ function contractTwoSite(AM,row,col,addEnergy)
   return(energy)
 end
 
-function applyGate(Tl,Tr,g)
-  @tensor begin
-    Tg[a,e,f,s1p,b,c,d,s2p] := Tl[a,x,e,f,s1]*Tr[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
-  end
-  tg = size(Tg)
-  Tg = reshape(Tg,prod(tg[1:4]),prod(tg[5:8]))
-  (U,d,V) = svd(Tg)
-  U = U * diagm(d)
-  newDim = length(d)
-  Tl1 = reshape(U,tg[1],tg[2],tg[3],tg[4],newDim)
-  Tr1 = reshape(V',newDim,tg[5],tg[6],tg[7],tg[8])
-  Tl2 = [Tl1[i,j,k,s,l] for i=1:tg[1], l=1:newDim, j=1:tg[2], k=1:tg[3], s=1:tg[4]]
-  Tr2 = [Tr1[i,j,k,l,s] for j=1:tg[5], k=1:tg[6], l=1:tg[7], i=1:newDim, s=1:tg[8]]
-  return(Tl2, Tr2)
-end
+
 
 function initRowEnv(AM)
   for j = 1:N-1
@@ -305,37 +287,6 @@ function approxMPS(Big,Dp)
 
 end
 
-function calcNorm(T)
-
-  left = eye(1)
-  for i = 1:N
-    Ticonj = conj.(T[i])
-    Ti = T[i]
-    @tensor begin
-      NewLeft[x,y] := Ticonj[u,s,x]*Ti[w,s,y]*left[u,w]
-    end
-    left = NewLeft
-  end
-  norm = trace(left)
-  return(norm)
-
-end
-
-function calcOverlap(T,S)
-
-  left = eye(1)
-  for i = 1:N
-    Siconj = conj.(S[i])
-    Ti = T[i]
-    @tensor begin
-      NewLeft[x,y] := Siconj[u,s,x]*Ti[w,s,y]*left[u,w]
-    end
-    left = NewLeft
-  end
-  norm = trace(left)
-  return(norm)
-
-end
 
 
 function approxMPS2(Big,Dp)

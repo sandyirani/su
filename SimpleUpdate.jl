@@ -2,6 +2,7 @@
 using TensorOperations
 using LinearMaps
 
+include("Utilities.jl")
 include("Contract.jl")
 include("Test.jl")
 
@@ -121,52 +122,6 @@ function applyGateAndUpdateDown(g, row, col)
 
 end
 
-function rotateTensors(Ap,Bp)
-
-    ap = size(Ap)
-    bp = size(Bp)
-
-    A2 = [Ap[a,b,c,d,s] for b = 1:ap[2], c = 1:ap[3], d = 1:ap[4], a = 1:ap[1], s = 1:pd]
-    B2 = [Bp[a,b,c,d,s] for b = 1:bp[2], c = 1:bp[3], d = 1:bp[4], a = 1:bp[1], s = 1:pd]
-
-    return(A2,B2)
-
-end
-
-function rotateTensorsBack(Ap,Bp)
-
-    ap = size(Ap)
-    bp = size(Bp)
-
-    A2 = [Ap[a,b,c,d,s] for d = 1:ap[4], a = 1:ap[1], b = 1:ap[2], c = 1:ap[3], s = 1:pd]
-    B2 = [Bp[a,b,c,d,s] for d = 1:bp[4], a = 1:bp[1], b = 1:bp[2], c = 1:bp[3], s = 1:pd]
-
-    return(A2,B2)
-
-end
-
-
-function applyGateAndTrim(Aleft,Aright,g)
-
-        @tensor begin
-          ABg[a,e,f,s1p,b,c,d,s2p] := Aleft[a,x,e,f,s1]*Aright[b,c,d,x,s2]*g[s1,s2,s1p,s2p]
-        end
-        a = size(ABg)
-        ABg = reshape(ABg,a[1]*a[2]*a[3]*pd,a[5]*a[6]*a[7]*pd)
-        (U,d,V) = svd(ABg)
-        newDim = min(D,length(d))
-        U = U[:,1:newDim]
-        V = V[:,1:newDim]
-        newSH = diagm(d[1:newDim])
-        A2p = reshape(U,a[1],a[2],a[3],pd,newDim)
-        B2p = reshape(V',newDim,a[5],a[6],a[7],pd)
-        A2p = renormL2(A2p)
-        B2p = renormL2(B2p)
-        newSH = renormL2(newSH)
-        A2p = [A2p[i,j,k,s,l] for i=1:a[1], l=1:newDim, j=1:a[2], k=1:a[3], s=1:pd]
-        B2p = [B2p[i,j,k,l,s] for j=1:a[5], k=1:a[6], l=1:a[7], i=1:newDim, s=1:pd]
-        return(A2p, B2p, newSH)
-end
 
 
 
@@ -203,12 +158,4 @@ function merge(Arc,row, col, dir, doInv)
         return(temp)
     end
     return(Arc)
-end
-
-function renormL2(T)
-  t = size(T)
-  Tvec = reshape(T,prod(t))
-  norm = abs(Tvec'*Tvec)
-  T = T/sqrt(norm)
-  return(T)
 end
