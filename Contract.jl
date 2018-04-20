@@ -47,9 +47,8 @@ function mergeA()
             if (row < N)
                 temp = merge(temp,row,col,DOWN,false)
             end
-            if (col < N)
-                temp = merge(temp,row,col,RIGHT,false)
-            end
+            #Cyl
+            temp = merge(temp,row,col,RIGHT,false)
             AM[row,col] = temp
         end
     end
