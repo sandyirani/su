@@ -107,3 +107,34 @@ function calcOverlap(T,S)
   return(norm)
 
 end
+
+function dosvdtrunc(AA,m)		# AA a matrix;  keep at most m states
+    (u,d,v) = svd(AA)
+    prob = dot(d,d)		# total probability
+    mm = min(m,length(d))	# number of states to keep
+    d = d[1:mm]			# middle matrix in vector form
+    trunc = prob - dot(d,d)
+    U = u[:,1:mm]
+    V = v[:,1:mm]'
+    (U,d,V,trunc)		# AA == U * diagm(d) * V	with error trunc
+end
+
+function rotateTensor(T)
+
+    t = size(T)
+
+    T2 = [T[a,b,c,d,s] for b = 1:t[2], c = 1:t[3], d = 1:t[4], a = 1:t[1], s = 1:pd]
+
+    return(T2)
+
+end
+
+function rotateGrid(AM)
+  AMnew = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
+  for row = 1:N
+    for col = 1:N
+      AMnew[row,col] = rotateTensor(AM[col,N-row+1])
+    end
+  end
+  return(AMnew)
+end

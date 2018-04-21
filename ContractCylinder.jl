@@ -55,12 +55,52 @@ function updateRowEnv(AM,row, topDown)
     newRow[k] = newRE
   end
 
-  maxDim = maximum([size(newRow[k])[3] for k=1:N-1])
-  #if (maxDim > Dp)
-  if (row > 1 && row < N)
+
+  if (D^row > Dp && row < N)
     RowEnv[row,:] = approxMPS2(newRow,Dp)
   else
     RowEnv[row,:] = newRow
   end
+
+end
+
+function approxMPS2(Big,Dp)
+
+  New = [ones(1,1,1) for j = 1:N]
+
+  for j = N-1:-1:2
+    left = Big[j]
+    right = (j < N-1? New[j+1]: Big[j+1])
+    l = size(left)
+    r = size(right)
+    left = reshape(left,l[1]*l[2],l[3])
+    right = reshape(right,r[1],r[2]*r[3])
+    both = left*right
+    (U,d,V,trunc) = dosvdtrunc(both,l[3])
+    dim = length(d)
+    New[j] = reshape(U*diagm(d),l[1],l[2],dim)
+    New[j+1] = reshape(V,dim,r[2],r[3])
+  end
+
+  for j = 1:N-1
+    left = (j > 1? New[j]: Big[j])
+    right = Big[j+1]
+    l = size(left)
+    r = size(right)
+    left = reshape(left,l[1]*l[2],l[3])
+    right = reshape(right,r[1],r[2]*r[3])
+    both = left*right
+    (U,d,V,trunc) = dosvdtrunc(both,Dp)
+    dim = length(d)
+    New[j] = reshape(U,l[1],l[2],dim)
+    New[j+1] = reshape(diagm(d)*V,dim,r[2],r[3])
+  end
+
+  normBig = calcNorm(Big)
+  normNew = calcNorm(New)
+  overlap = calcOverlap(Big,New)
+  @show((normBig+normNew-2*real(overlap))/normBig)
+
+  return(New)
 
 end

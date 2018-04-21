@@ -65,10 +65,8 @@ function mainLoop()
     end
     println("\n End of stage $stage")
   end
-  println("Calculating Energy")
-  #testNorms()
-  #energy = calcEnergy()
-  println("\n Energy per site = $energy")
+  println("Merging Rows")
+  mergeRows()
 end
 
 function applyGateAndUpdateRight(g, row, col)
