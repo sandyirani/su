@@ -3,7 +3,7 @@ using TensorOperations
 using LinearMaps
 
 include("Utilities.jl")
-include("Contract.jl")
+include("ContractCylinder.jl")
 include("Test.jl")
 
 UP = 1
