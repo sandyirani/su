@@ -288,13 +288,14 @@ end
 
 
 
+
 function approxMPS2(Big,Dp)
 
-  New = [ones(1,1,1) for j = 1:N]
+  New = [copy(Big[j]) for j = 1:N]
 
   for j = N-1:-1:2
-    left = Big[j]
-    right = (j < N-1? New[j+1]: Big[j+1])
+    left = New[j]
+    right = New[j+1]
     l = size(left)
     r = size(right)
     left = reshape(left,l[1]*l[2],l[3])
@@ -307,8 +308,8 @@ function approxMPS2(Big,Dp)
   end
 
   for j = 1:N-1
-    left = (j > 1? New[j]: Big[j])
-    right = Big[j+1]
+    left = New[j]
+    right = New[j+1]
     l = size(left)
     r = size(right)
     left = reshape(left,l[1]*l[2],l[3])

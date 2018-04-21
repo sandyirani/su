@@ -67,33 +67,26 @@ end
 function approxMPS2(Big,Dp)
 
   New = [ones(1,1,1) for j = 1:N]
+  halfN = Int64(ceil(N/2))
 
-  for j = N-1:-1:2
-    left = Big[j]
-    right = (j < N-1? New[j+1]: Big[j+1])
-    l = size(left)
-    r = size(right)
-    left = reshape(left,l[1]*l[2],l[3])
-    right = reshape(right,r[1],r[2]*r[3])
-    both = left*right
-    (U,d,V,trunc) = dosvdtrunc(both,l[3])
-    dim = length(d)
-    New[j] = reshape(U*diagm(d),l[1],l[2],dim)
-    New[j+1] = reshape(V,dim,r[2],r[3])
-  end
-
-  for j = 1:N-1
-    left = (j > 1? New[j]: Big[j])
-    right = Big[j+1]
-    l = size(left)
-    r = size(right)
-    left = reshape(left,l[1]*l[2],l[3])
-    right = reshape(right,r[1],r[2]*r[3])
-    both = left*right
-    (U,d,V,trunc) = dosvdtrunc(both,Dp)
-    dim = length(d)
-    New[j] = reshape(U,l[1],l[2],dim)
-    New[j+1] = reshape(diagm(d)*V,dim,r[2],r[3])
+  for col = 1:N
+      colp1 = mod(col,N) + 1
+      mid = mod(col+halfN,N)
+      for j = 1:mid-1
+          li = mod(mid+j-1,N)+1
+          ri = mod(mid+j,N)+1
+          left = New[li]
+          right = New[ri]
+          (New[li],New[ri])  = moveHoriz(left,right,size(left)[3],false)
+          li = mod(mid-j,N)+1
+          ri = mod(mid-j+1,N)+1
+          left = New[li]
+          right = New[ri]
+          (New[li],New[ri])  = moveHoriz(left,right,size(left)[3],true)
+      end
+      left = New[col]
+      right = New[colp1]
+      (New[col],New[colp1])  = moveHoriz(left,right,Dp,false)
   end
 
   normBig = calcNorm(Big)
@@ -102,5 +95,25 @@ function approxMPS2(Big,Dp)
   @show((normBig+normNew-2*real(overlap))/normBig)
 
   return(New)
+
+end
+
+function moveHoriz(left,right,m,toLeft)
+
+    l = size(left)
+    r = size(right)
+    left = reshape(left,l[1]*l[2],l[3])
+    right = reshape(right,r[1],r[2]*r[3])
+    both = left*right
+    (U,d,V,trunc) = dosvdtrunc(both,m)
+    dim = length(d)
+    if (toLeft)
+        left = reshape(U*diagm(d),l[1],l[2],dim)
+        right = reshape(V,dim,r[2],r[3])
+    else
+        left = reshape(U,l[1],l[2],dim)
+        right = reshape(diagm(d)*V,dim,r[2],r[3])
+    end
+    return(left,right)
 
 end
