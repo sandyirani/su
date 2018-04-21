@@ -2,6 +2,7 @@
 function mergeRows()
   AM = mergeA()
   for j = 1:N-1
+    println("\n Merging row $j")
     updateRowEnv(AM,j,true)
   end
 end
@@ -55,18 +56,18 @@ function updateRowEnv(AM,row, topDown)
     newRow[k] = newRE
   end
 
-
-  if (D^row > Dp && row < N)
+  if (D^(2*row) > Dp && row < N)
     RowEnv[row,:] = approxMPS2(newRow,Dp)
   else
     RowEnv[row,:] = newRow
   end
 
+
 end
 
 function approxMPS2(Big,Dp)
 
-  New = [ones(1,1,1) for j = 1:N]
+  New = [copy(Big[j]) for j = 1:N]
   halfN = Int64(ceil(N/2))
 
   for col = 1:N
@@ -74,24 +75,19 @@ function approxMPS2(Big,Dp)
       mid = mod(col+halfN,N)
       for j = 1:mid-1
           li = mod(mid+j-1,N)+1
-          ri = mod(mid+j,N)+1
-          left = New[li]
-          right = New[ri]
-          (New[li],New[ri])  = moveHoriz(left,right,size(left)[3],false)
-          li = mod(mid-j,N)+1
-          ri = mod(mid-j+1,N)+1
-          left = New[li]
-          right = New[ri]
-          (New[li],New[ri])  = moveHoriz(left,right,size(left)[3],true)
+          ri = mod(li,N)+1
+          (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],false)
+          li = mod(mid-j-1,N)+1
+          ri = mod(li,N)+1
+          @show(size(New[li]),size(New[ri]))
+          (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],true)
       end
-      left = New[col]
-      right = New[colp1]
-      (New[col],New[colp1])  = moveHoriz(left,right,Dp,false)
+      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)
   end
 
-  normBig = calcNorm(Big)
-  normNew = calcNorm(New)
-  overlap = calcOverlap(Big,New)
+  normBig = calcOverlapCycle(Big,Big)
+  normNew = calcOverlapCycle(New,New)
+  overlap = calcOverlapCycle(Big,New)
   @show((normBig+normNew-2*real(overlap))/normBig)
 
   return(New)

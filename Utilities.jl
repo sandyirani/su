@@ -108,6 +108,23 @@ function calcOverlap(T,S)
 
 end
 
+function calcOverlapCycle(T,S)
+
+  left = eye(size(T[1])[1]*size(S[1])[1])
+  for i = 1:N
+    Siconj = conj.(S[i])
+    Ti = T[i]
+    @tensor begin
+      NewM[u,w,x,y] := Siconj[u,s,x]*Ti[w,s,y]
+    end
+    nm = size(NewM)
+    left = left*reshape(NewM,nm[1]*nm[2],nm[3]*nm[4])
+  end
+  norm = trace(left)
+  return(norm)
+
+end
+
 function dosvdtrunc(AA,m)		# AA a matrix;  keep at most m states
     (u,d,v) = svd(AA)
     prob = dot(d,d)		# total probability
