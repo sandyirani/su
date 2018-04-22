@@ -73,13 +73,17 @@ function approxMPS2(Big,Dp)
   for col = 1:N
       colp1 = mod(col,N) + 1
       mid = mod(col+halfN,N)
+        println("\n Trunc col $col")
       for j = 1:mid-1
           li = mod(mid+j-1,N)+1
           ri = mod(li,N)+1
           (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],false)
           li = mod(mid-j-1,N)+1
           ri = mod(li,N)+1
+          @show(li,ri)
           @show(size(New[li]),size(New[ri]))
+          @show(maximum(abs.(New[li])),minimum(abs.(New[li])))
+          @show(maximum(abs.(New[ri])),minimum(abs.(New[ri])))
           (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],true)
       end
       (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)
