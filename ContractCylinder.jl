@@ -57,6 +57,8 @@ function updateRowEnv(AM,row, topDown)
   end
 
   if (D^(2*row) > Dp && row < N)
+    approxMPS3(newRow,Dp)
+    approxMPS4(newRow,Dp)
     RowEnv[row,:] = approxMPS2(newRow,Dp)
   else
     RowEnv[row,:] = newRow
@@ -72,7 +74,7 @@ function approxMPS2(Big,Dp)
   for col = 1:N
       colp1 = mod(col,N) + 1
       mid = mod(col+halfN,N)
-        println("\n Trunc col $col")
+        #println("\n Trunc col $col")
       for j = 1:mid-1
           li = mod(mid+j-1,N)+1
           ri = mod(li,N)+1
@@ -92,6 +94,45 @@ function approxMPS2(Big,Dp)
   return(New)
 
 end
+
+function approxMPS3(Big,Dp)
+
+  New = [copy(Big[j]) for j = 1:N]
+  halfN = Int64(ceil(N/2))
+
+  for col = 1:N-1
+      colp1 = mod(col,N) + 1
+      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)
+  end
+
+  normBig = calcOverlapCycle(Big,Big)
+  normNew = calcOverlapCycle(New,New)
+  overlap = calcOverlapCycle(Big,New)
+  @show((normBig+normNew-2*real(overlap))/normBig)
+
+end
+
+function approxMPS4(Big,Dp)
+
+  New = [copy(Big[j]) for j = 1:N]
+  halfN = Int64(ceil(N/2))
+
+  for col = 1:N-1
+      colp1 = mod(col,N) + 1
+      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],size(New[col])[3],false)
+  end
+  for col = N:-1:1
+      colp1 = mod(col,N) + 1
+      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,true)
+  end
+
+  normBig = calcOverlapCycle(Big,Big)
+  normNew = calcOverlapCycle(New,New)
+  overlap = calcOverlapCycle(Big,New)
+  @show((normBig+normNew-2*real(overlap))/normBig)
+
+end
+
 
 function moveHoriz(left,right,m,toLeft)
 
