@@ -62,7 +62,6 @@ function updateRowEnv(AM,row, topDown)
     RowEnv[row,:] = newRow
   end
 
-
 end
 
 function approxMPS2(Big,Dp)
@@ -80,10 +79,6 @@ function approxMPS2(Big,Dp)
           (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],false)
           li = mod(mid-j-1,N)+1
           ri = mod(li,N)+1
-          @show(li,ri)
-          @show(size(New[li]),size(New[ri]))
-          @show(maximum(abs.(New[li])),minimum(abs.(New[li])))
-          @show(maximum(abs.(New[ri])),minimum(abs.(New[ri])))
           (New[li],New[ri])  = moveHoriz(New[li],New[ri],size(New[li])[3],true)
       end
       (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)

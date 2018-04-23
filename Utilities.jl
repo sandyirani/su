@@ -126,14 +126,9 @@ function calcOverlapCycle(T,S)
 end
 
 function dosvdtrunc(AA,m)		# AA a matrix;  keep at most m states
-    u = ones(1,1)
-    v = ones(1,1)
-    d = ones(1)
-    try
+
     (u,d,v) = svd(AA)
-catch
-    #@show(AA)
-end
+
     prob = dot(d,d)		# total probability
     mm = min(m,length(d))	# number of states to keep
     d = d[1:mm]			# middle matrix in vector form

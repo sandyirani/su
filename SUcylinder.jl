@@ -13,7 +13,7 @@ RIGHT = 4
 
 
 pd = 2
-N = 10
+N = 20
 D = 2
 Dp = 10
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
@@ -46,7 +46,7 @@ sigX = Float64[0 1; 1 0]
 
 function mainLoop()
   #numIters = [1000,2000,8000]
-  numIters = [100,200,800]
+  numIters = [100,200,1000]
   taus = [.1,.01,.001]
   for stage = 1:3
     tau = taus[stage]
