@@ -5,7 +5,6 @@ function studyMPS(Big)
 
 
   for col = 1:N
-      colp1 = mod(col,N) + 1
       mid = mod(col+halfN,N)
         #initialize left and right
       for j = 1:mid-1
@@ -30,7 +29,33 @@ function studyMPS(Big)
       dl = eigl[1]
       vl = eigl[2]
       eigr = eigs(right)
-      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)
+      dr = eigr[1]
+      vr = eigr[2]
+
+      colp1 = mod(col,N) + 1
+      colp2 = mod(col+1,N) + 1
+      colm1 = mod(col-2,N) + 1
+
+      R1 = reshape(New[colp1],size(New[colp1],1)*size(New[colp1],2),size(New[colp1],3))
+      R2 = reshape(New[colp2],size(New[colp2],1),size(New[colp2],2)*size(New[colp2],3))
+      R1 = R1*vr*diagm(sqrt.(dr))
+      R2 = diagm(inv.(sqrt.(dr)))*vr'*R2
+      New[colp2] = reshape(R2,size(R2,1),size(New[colp2],2),size(New[colp2],3))
+      R1 = reshape(R1,size(New[colp1],1),size(New[colp1],2)*size(R1,2))
+
+      L1 = reshape(New[colm1],size(New[colm1],1)*size(New[colm1],2),size(New[colm1],3))
+      L2 = reshape(New[col],size(New[col],1),size(New[col],2)*size(New[col],3))
+      L1 = L1*vl*diagm(sqrt.(dl))
+      L2 = diagm(inv.(sqrt.(dl)))*vl'*L2
+      New[colm1] = reshape(L1,size(New[colm1],1),size(New[colm1],2),size(L1,2))
+      L2 = reshape(L2,size(L2,2)*size(New[col],2),size(New[col],3))
+
+      both = L2*R1
+      (U,d,V,trunc) = dosvdtrunc(both,Dp)
+      dim = length(d)
+      New[col] = reshape(U,size(New[col],1),size(New[col],2),dim)
+      New[colp1] = reshape(diagm(d)*V,dim,size(New[colp1],2),size(New[colp1],3))
+
   end
 
   normBig = calcOverlapCycle(Big,Big)
