@@ -1,19 +1,49 @@
 function studyMPS(Big)
-  @show(calcOverlapCycle(Big))
-  Line = [ones(1,1,1) for j = 1:N+2]
-  left = zeros(1,size(Big[1],1),size(Big[1],1))
-  right = zeros(size(Big[N],3),size(Big[N],3),1)
-  left[1,:,:] = eye(size(Big[1],1))
-  right[:,:,1] = eye(size(Big[1],1))
-  Line[1] = left
-  Line[N+2] = right
+  @show(calcOverlapCycle(Big,Big))
+  Line = [ones(1,1,1) for j = 1:N]
   for k = 1:N
     for j = 1:N
-      Line[j+1] = Big[mod(j+k-2,N)+1]
-      @show(calcNorm(Line))
+      Line[j] = Big[mod(j+k-2,N)+1]
     end
+    @show(calcNorm(Line))
   end
 end
+
+function getInnerProductOpen(T)
+
+  T1conj = conj.(T[1])
+  T1 = T[1]
+  @tensor begin
+    left[u,x,w,y] := T1conj[u,s,x]*T1[w,s,y]
+  end
+  for i = 2:N
+    Ticonj = conj.(T[i])
+    Ti = T[i]
+    @tensor begin
+      NewLeft[a,x,b,y] := Ticonj[u,s,x]*Ti[w,s,y]*left[a,u,b,w]
+    end
+    left = NewLeft
+  end
+  l = size(left)
+  return(reshape(left,l[1]*l[2],l[3]*l[4]))
+
+end
+
+function getInnerProductClosed(T)
+
+  left = eye(size(T[1],1))
+  for i = 1:N
+    Ticonj = conj.(T[i])
+    Ti = T[i]
+    @tensor begin
+      NewLeft[x,y] := Ticonj[u,s,x]*Ti[w,s,y]*left[u,w]
+    end
+    left = NewLeft
+  end
+  return(left)
+
+end
+
 
 function testApproxMPS()
 

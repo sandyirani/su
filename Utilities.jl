@@ -78,7 +78,7 @@ end
 
 function calcNorm(T)
 
-  left = eye(1)
+  left = eye(size(T[1],1))
   for i = 1:N
     Ticonj = conj.(T[i])
     Ti = T[i]
