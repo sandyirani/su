@@ -1,3 +1,19 @@
+function studyMPS(Big)
+  @show(calcOverlapCycle(Big))
+  Line = [ones(1,1,1) for j = 1:N+2]
+  left = zeros(1,size(Big[1],1),size(Big[1],1))
+  right = zeros(size(Big[N],3),size(Big[N],3),1)
+  left[1,:,:] = eye(size(Big[1],1))
+  right[:,:,1] = eye(size(Big[1],1))
+  Line[1] = left
+  Line[N+2] = right
+  for k = 1:N
+    for j = 1:N
+      Line[j+1] = Big[mod(j+k-2,N)+1]
+      @show(calcNorm(Line))
+    end
+  end
+end
 
 function testApproxMPS()
 
@@ -79,7 +95,7 @@ function testNorms()
       norm = Avec'*Avec
       println("Norm of ($j,$k) = $norm")
     end
-  end 
+  end
 end
 
 function testOverlap2(T,S)

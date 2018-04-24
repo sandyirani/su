@@ -57,6 +57,9 @@ function updateRowEnv(AM,row, topDown)
   end
 
   if (D^(2*row) > Dp && row < N)
+    if (row == 7)
+      studyMPS(newRow)
+    end
     approxMPS3(newRow,Dp)
     approxMPS4(newRow,Dp)
     RowEnv[row,:] = approxMPS2(newRow,Dp)
