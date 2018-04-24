@@ -79,7 +79,7 @@ function testNorms()
       norm = Avec'*Avec
       println("Norm of ($j,$k) = $norm")
     end
-  end       
+  end 
 end
 
 function testOverlap2(T,S)
