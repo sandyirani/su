@@ -1,12 +1,44 @@
 function studyMPS(Big)
-  @show(calcOverlapCycle(Big,Big))
-  Line = [ones(1,1,1) for j = 1:N]
-  for k = 1:N
-    for j = 1:N
-      Line[j] = Big[mod(j+k-2,N)+1]
-    end
-    @show(calcNorm(Line))
+
+  New = [copy(Big[j]) for j = 1:N]
+  halfN = Int64(ceil(N/2))
+
+
+  for col = 1:N
+      colp1 = mod(col,N) + 1
+      mid = mod(col+halfN,N)
+        #initialize left and right
+      for j = 1:mid-1
+          li = mod(mid+j-1,N)+1
+          ri = mod(mid-j,N)+1
+          Newli = New[li]
+          Newri = New[ri]
+          Newliconj = conj.(Newli)
+          Newriconj = conj.(Newri)
+          @tensor begin
+            NewLeft[x,y] := Newliconj[u,s,x]*Newli[w,s,y]*left[u,w]
+            NewRight[u,w] := Newriconj[u,s,x]*Newri[w,s,y]*right[x,y]
+          end
+          left = NewLeft
+          right = Newright
+      end
+      left = .5*(left + left')
+      right = .5*(right+right')
+      left = renormL2(left)
+      right = renormL2(right)
+      eigl = eigs(left)
+      dl = eigl[1]
+      vl = eigl[2]
+      eigr = eigs(right)
+      (New[col],New[colp1])  = moveHoriz(New[col],New[colp1],Dp,false)
   end
+
+  normBig = calcOverlapCycle(Big,Big)
+  normNew = calcOverlapCycle(New,New)
+  overlap = calcOverlapCycle(Big,New)
+  @show((normBig+normNew-2*real(overlap))/normBig)
+
+  return(New)
 end
 
 function getInnerProductOpen(T)
