@@ -6,13 +6,18 @@ function studyMPS(Big)
 
   for col = 1:N
       mid = mod(col+halfN,N)
+      colp1 = mod(col,N) + 1
+      colp2 = mod(col+1,N) + 1
+      colm1 = mod(col-2,N) + 1
       li = mod(mid,N)+1
       ri = mod(mid-1,N)+1
       dl = size(New[li],1)
       dr = size(New[ri],3)
-      left = eye(dl)
-      right = eye(rl)
-      for j = 1:mid-1
+      left = zeros(dl,dl)
+      left[1,1] = 1
+      right = zeros(dr,dr)
+      right[1,1] = 1
+      for j = 1:halfN-1
           li = mod(mid+j-1,N)+1
           ri = mod(mid-j,N)+1
           Newli = New[li]
@@ -24,7 +29,7 @@ function studyMPS(Big)
             NewRight[u,w] := Newriconj[u,s,x]*Newri[w,s,y]*right[x,y]
           end
           left = NewLeft
-          right = Newright
+          right = NewRight
       end
       left = .5*(left + left')
       right = .5*(right + right')
@@ -34,41 +39,50 @@ function studyMPS(Big)
       dl = eigl[1]
       vl = eigl[2]
       (dl,vl) = cleanEigs(dl,vl)
+
+      @show(dl)
+      left2 = vl*diagm(sqrt.(dl))*diagm(inv.(sqrt.(dl)))*vl'*left*vl*diagm(inv.(sqrt.(dl)))*diagm(sqrt.(dl))*vl'
+      @show(sum(abs2.(left-left2))/sum(abs2.(left)))
+
       eigr = eigs(right)
       dr = eigr[1]
       vr = eigr[2]
       (dr,vr) = cleanEigs(dr,vr)
 
-      colp1 = mod(col,N) + 1
-      colp2 = mod(col+1,N) + 1
-      colm1 = mod(col-2,N) + 1
+      right2 = vr*diagm(sqrt.(dr))*diagm(inv.(sqrt.(dr)))*vr'*right*vr*diagm(inv.(sqrt.(dr)))*diagm(sqrt.(dr))*vr'
+      @show(sum(abs2.(right-right2))/sum(abs2.(right)))
 
       R1 = reshape(New[colp1],size(New[colp1],1)*size(New[colp1],2),size(New[colp1],3))
       R2 = reshape(New[colp2],size(New[colp2],1),size(New[colp2],2)*size(New[colp2],3))
+      dimR = length(dr)
       R1 = R1*vr*diagm(sqrt.(dr))
       R2 = diagm(inv.(sqrt.(dr)))*vr'*R2
-      New[colp2] = reshape(R2,size(R2,1),size(New[colp2],2),size(New[colp2],3))
-      R1 = reshape(R1,size(New[colp1],1),size(New[colp1],2)*size(R1,2))
+      New[colp2] = reshape(R2,dimR,size(New[colp2],2),size(New[colp2],3))
+      R1 = reshape(R1,size(New[colp1],1),size(New[colp1],2)*dimR)
 
       L1 = reshape(New[colm1],size(New[colm1],1)*size(New[colm1],2),size(New[colm1],3))
       L2 = reshape(New[col],size(New[col],1),size(New[col],2)*size(New[col],3))
+      dimL = length(dl)
       L1 = L1*vl*diagm(sqrt.(dl))
       L2 = diagm(inv.(sqrt.(dl)))*vl'*L2
-      New[colm1] = reshape(L1,size(New[colm1],1),size(New[colm1],2),size(L1,2))
-      L2 = reshape(L2,size(L2,2)*size(New[col],2),size(New[col],3))
+      New[colm1] = reshape(L1,size(New[colm1],1),size(New[colm1],2),dimL)
+      L2 = reshape(L2,dimL*size(New[col],2),size(New[col],3))
 
       both = L2*R1
-      (U,d,V,trunc) = dosvdtrunc(both,Dp)
+      #(U,d,V,trunc) = dosvdtrunc(both,Dp)
+      (U,d,V) = svd(both)
       dim = length(d)
-      New[col] = reshape(U,size(New[col],1),size(New[col],2),dim)
-      New[colp1] = reshape(diagm(d)*V,dim,size(New[colp1],2),size(New[colp1],3))
+      New[col] = reshape(U,dimL,size(New[col],2),dim)
+      New[colp1] = reshape(diagm(d)*V,dim,size(New[colp1],2),dimR)
+
+      normBig = calcOverlapCycle(Big,Big)
+      normNew = calcOverlapCycle(New,New)
+      overlap = calcOverlapCycle(Big,New)
+      @show((normBig+normNew-2*real(overlap))/normBig)
+      println(" ")
 
   end
 
-  normBig = calcOverlapCycle(Big,Big)
-  normNew = calcOverlapCycle(New,New)
-  overlap = calcOverlapCycle(Big,New)
-  @show((normBig+normNew-2*real(overlap))/normBig)
 
   return(New)
 end

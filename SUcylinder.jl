@@ -16,6 +16,7 @@ pd = 2
 N = 10
 D = 2
 Dp = 10
+
 #=
 A = [zeros(1,1,1,1,pd) for j=1:N,  k = 1:N]
 for j = 1:N
@@ -27,6 +28,7 @@ end
 SV = [eye(1) for j = 1:N-1, k = 1:N]
 SH = [eye(1) for j = 1:N, k = 1:N]
 =#
+
 
 
 RowEnv = [ones(1,1,1) for j=1:N, k=1:N]

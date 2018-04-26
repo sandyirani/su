@@ -1,7 +1,7 @@
 function cleanEigs(d,v)
     count = 0
     for j = 1:length(d)
-        count = (d[j]>0? count++: count)
+        count = (d[j]>0? count+1: count)
     end
     dNew = zeros(count)
     vNew = zeros(size(v,1),count)
