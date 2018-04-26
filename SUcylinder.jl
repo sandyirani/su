@@ -31,6 +31,7 @@ SH = [eye(1) for j = 1:N, k = 1:N]
 
 
 
+
 RowEnv = [ones(1,1,1) for j=1:N, k=1:N]
 SideEnv = [ones(1,1,1,1) for k=1:N]
 endRow = [ones(1,1,1) for j=1:N]

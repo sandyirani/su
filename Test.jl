@@ -1,5 +1,5 @@
 function studyMPS(Big)
-
+  eps = .0005
   New = [copy(Big[j]) for j = 1:N]
   halfN = Int64(ceil(N/2))
 
@@ -38,9 +38,11 @@ function studyMPS(Big)
       eigl = eigs(left)
       dl = eigl[1]
       vl = eigl[2]
-      (dl,vl) = cleanEigs(dl,vl)
+      (dl,vl) = cleanEigs(dl,vl,eps)
 
       @show(dl)
+      @show(sqrt.(dl))
+      @show(inv.(sqrt.(dl)))
       left2 = vl*diagm(sqrt.(dl))*diagm(inv.(sqrt.(dl)))*vl'*left*vl*diagm(inv.(sqrt.(dl)))*diagm(sqrt.(dl))*vl'
       @show(sum(abs2.(left-left2))/sum(abs2.(left)))
 
@@ -57,6 +59,8 @@ function studyMPS(Big)
       dimR = length(dr)
       R1 = R1*vr*diagm(sqrt.(dr))
       R2 = diagm(inv.(sqrt.(dr)))*vr'*R2
+      #R1 = R1*vr
+      #R2 = vr'*R2
       New[colp2] = reshape(R2,dimR,size(New[colp2],2),size(New[colp2],3))
       R1 = reshape(R1,size(New[colp1],1),size(New[colp1],2)*dimR)
 
@@ -65,12 +69,22 @@ function studyMPS(Big)
       dimL = length(dl)
       L1 = L1*vl*diagm(sqrt.(dl))
       L2 = diagm(inv.(sqrt.(dl)))*vl'*L2
+      #L1 = L1*vl
+      #L2 = vl'*L2
       New[colm1] = reshape(L1,size(New[colm1],1),size(New[colm1],2),dimL)
       L2 = reshape(L2,dimL*size(New[col],2),size(New[col],3))
 
+      New[col] = reshape(L2,dimL,size(New[col],2),size(New[col],3))
+      New[colp1] = reshape(R1,size(New[colp1],1),size(New[colp1],2),dimR)
+
+      normBig = calcOverlapCycle(Big,Big)
+      normNew = calcOverlapCycle(New,New)
+      overlap = calcOverlapCycle(Big,New)
+      @show((normBig+normNew-2*real(overlap))/normBig)
+
+
       both = L2*R1
-      #(U,d,V,trunc) = dosvdtrunc(both,Dp)
-      (U,d,V) = svd(both)
+      (U,d,V,trunc) = dosvdtrunc(both,Dp)
       dim = length(d)
       New[col] = reshape(U,dimL,size(New[col],2),dim)
       New[colp1] = reshape(diagm(d)*V,dim,size(New[colp1],2),dimR)
@@ -79,6 +93,8 @@ function studyMPS(Big)
       normNew = calcOverlapCycle(New,New)
       overlap = calcOverlapCycle(Big,New)
       @show((normBig+normNew-2*real(overlap))/normBig)
+    
+
       println(" ")
 
   end

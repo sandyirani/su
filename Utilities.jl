@@ -1,13 +1,13 @@
-function cleanEigs(d,v)
+function cleanEigs(d,v,eps)
     count = 0
     for j = 1:length(d)
-        count = (d[j]>0? count+1: count)
+        count = (d[j]>eps? count+1: count)
     end
     dNew = zeros(count)
     vNew = zeros(size(v,1),count)
     curr = 1
     for j = 1:length(d)
-        if (d[j]>0)
+        if (d[j]>eps)
             dNew[curr] = d[j]
             vNew[:,curr] = v[:,j]
             curr += 1
