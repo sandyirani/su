@@ -33,9 +33,11 @@ function studyMPS(Big)
       eigl = eigs(left)
       dl = eigl[1]
       vl = eigl[2]
+      (dl,vl) = cleanEigs(dl,vl)
       eigr = eigs(right)
       dr = eigr[1]
       vr = eigr[2]
+      (dr,vr) = cleanEigs(dr,vr)
 
       colp1 = mod(col,N) + 1
       colp2 = mod(col+1,N) + 1

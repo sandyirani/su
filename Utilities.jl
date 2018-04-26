@@ -1,3 +1,20 @@
+function cleanEigs(d,v)
+    count = 0
+    for j = 1:length(d)
+        count = (d[j]>0? count++: count)
+    end
+    dNew = zeros(count)
+    vNew = zeros(size(v,1),count)
+    curr = 1
+    for j = 1:length(d)
+        if (d[j]>0)
+            dNew[curr] = d[j]
+            vNew[:,curr] = v[:,j]
+            curr += 1
+        end
+    end
+    return(dNew,vNew)
+end
 
 function rotateTensors(Ap,Bp)
 
