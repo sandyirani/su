@@ -6,7 +6,12 @@ function studyMPS(Big)
 
   for col = 1:N
       mid = mod(col+halfN,N)
-        #initialize left and right
+      li = mod(mid,N)+1
+      ri = mod(mid-1,N)+1
+      dl = size(New[li],1)
+      dr = size(New[ri],3)
+      left = eye(dl)
+      right = eye(rl)
       for j = 1:mid-1
           li = mod(mid+j-1,N)+1
           ri = mod(mid-j,N)+1
@@ -22,7 +27,7 @@ function studyMPS(Big)
           right = Newright
       end
       left = .5*(left + left')
-      right = .5*(right+right')
+      right = .5*(right + right')
       left = renormL2(left)
       right = renormL2(right)
       eigl = eigs(left)
